@@ -3,26 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tag {{ tag.name }}</title>
+  <title>Categoria {{ tag.name }}</title>
   {% include "_style.html" %}
 </head>
 <body>
 {% include "_nav.html" %}
 <div class="wrap">
-  <p><a href="{{ base() }}/categorias">‹ Categorias</a></p>
-  <h1>#{{ tag.name }}
+  <p><a href="/categorias">‹ Categorias</a></p>
+  <h1>{{ tag.name | capitalize }}
     {% if tag.excludes_from_total %}<span class="pill">não soma no total</span>{% endif %}
   </h1>
 
   <div class="monthbar">
-    <a href="{{ base() }}/categorias/{{ tag.id }}?mes={{ prev }}">‹ {{ prev | mes }}</a>
+    <a href="/categorias/{{ tag.id }}?mes={{ prev }}">‹ {{ prev | mes }}</a>
     <strong>{{ ref | mes }}</strong>
-    <a href="{{ base() }}/categorias/{{ tag.id }}?mes={{ next }}">{{ next | mes }} ›</a>
+    <a href="/categorias/{{ tag.id }}?mes={{ next }}">{{ next | mes }} ›</a>
   </div>
 
   <section class="cards">
-    <div class="card"><small>Despesas com esta tag</small><div class="val">{{ despesas | brl }}</div></div>
-    <div class="card"><small>Receitas com esta tag</small><div class="val pago">{{ receitas | brl }}</div></div>
+    <div class="card"><small>Despesas da categoria</small><div class="val">{{ despesas | brl }}</div></div>
+    <div class="card"><small>Receitas da categoria</small><div class="val pago">{{ receitas | brl }}</div></div>
   </section>
 
   <h2>Lançamentos no mês</h2>
@@ -46,7 +46,7 @@
     </tbody>
   </table>
   {% else %}
-  <p class="muted">Nenhum lançamento com esta tag neste mês.</p>
+  <p class="muted">Nenhum lançamento com esta categoria neste mês.</p>
   {% endif %}
 </div>
 </body>

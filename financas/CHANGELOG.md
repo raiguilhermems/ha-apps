@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.5
+- Textos das telas de categorias revisados: a palavra "tag" saiu de todas as telas.
+
 ## 0.0.4
 - Tags renomeadas para Categorias nas telas. O endereço agora é /categorias, e o antigo /tags redireciona.
 
