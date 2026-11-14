@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configurações</title>
+  {% include "_style.html" %}
+</head>
+<body>
+{% include "_nav.html" %}
+<div class="wrap">
+  <h1>Configurações</h1>
+
+  <h2>Projeção</h2>
+  <div class="panel">
+    <form class="grid" method="post" action="{{ base() }}/configuracoes/projecao">
+      <label>Meses exibidos na projeção (1 a 12)
+        <input type="number" name="meses" min="1" max="12" value="{{ horizonte }}" required>
+      </label>
+      <button type="submit" class="primary">Salvar</button>
+    </form>
+  </div>
+
+  <h2>Backup</h2>
+  <div class="panel">
+    <p class="aviso">Banco atual: {{ tamanho_mb }} MB. Baixe um backup antes de importar ou apagar qualquer coisa.</p>
+    <p><a class="btn primary" href="{{ base() }}/configuracoes/backup">Baixar backup</a></p>
+    <form class="grid" method="post" action="{{ base() }}/configuracoes/importar" enctype="multipart/form-data"
+          onsubmit="return confirm('Importar este backup substitui todos os dados atuais. Continuar?')">
+      <label>Arquivo de backup (.db)<input type="file" name="arquivo" accept=".db" required></label>
+      <button type="submit">Importar backup</button>
+    </form>
+    <p class="aviso">Antes de importar, o app guarda uma cópia do banco atual como <code>finance-antes-da-importacao.db</code>.</p>
+  </div>
+
+  <h2>Apagar dados</h2>
+  <div class="panel">
+    <p class="aviso">Apaga lançamentos, recorrentes, parcelados, tags e cartões. Não pode ser desfeito.</p>
+    <form class="grid" method="post" action="{{ base() }}/configuracoes/apagar"
+          onsubmit="return confirm('Tem certeza que quer apagar todos os dados?')">
+      <label>Digite APAGAR para confirmar<input name="confirmacao" autocomplete="off" required></label>
+      <button type="submit" class="danger">Apagar tudo</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

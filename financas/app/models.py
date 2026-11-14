@@ -91,3 +91,10 @@ class Valuation(SQLModel, table=True):
     account_id: int = Field(foreign_key="account.id")
     date: date
     value_cents: int
+
+
+class Setting(SQLModel, table=True):
+    __tablename__ = "setting"
+
+    key: str = Field(primary_key=True)
+    value: str

@@ -3,8 +3,12 @@
 from contextlib import asynccontextmanager
 from datetime import date
 from pathlib import Path
+import shutil
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Request
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse
+from sqlmodel import Session, SQLModel, select
+
 from contextvars import ContextVar
 from fastapi.responses import RedirectResponse as _RedirectResponse
 
@@ -19,9 +23,8 @@ class RedirectResponse(_RedirectResponse):
             url = _prefixo.get() + url
         super().__init__(url, status_code=status_code, headers=headers, background=background)
 from fastapi.templating import Jinja2Templates
-from sqlmodel import Session, select
 
-from app.db import get_session, init_db
+from app.db import DB_PATH, engine, get_session, init_db
 from app.models import Account, InstallmentPlan, RecurringRule, Tag, Transaction, TransactionTag
 from app.services.debts import delete_plan
 from app.services.edit import update_rule, update_transaction
@@ -39,7 +42,7 @@ from app.services.tags import (
 )
 from app.services.util import add_months, current_month, fmt_brl, mes_curto, month_bounds, parse_brl
 from app.services.charts import parcelas_mensal, receitas_despesas_mensal
-
+from app.services.settings import get_setting, set_setting
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -102,6 +105,7 @@ def home(request: Request, mes: str | None = None, session: Session = Depends(ge
         .order_by(Transaction.due_date)
     ).all()
     txs = [t for t in txs if t.account_id not in cards]
+    horizonte = int(get_setting(session, "projecao_meses"))
 
     return templates.TemplateResponse(
         request,
@@ -115,7 +119,8 @@ def home(request: Request, mes: str | None = None, session: Session = Depends(ge
             "txs": txs,
             "tag_map": tags_by_tx(session, [t.id for t in txs]),
             "atrasados": overdue_items(session),
-            "proj": projection(session, ref, 3),
+            "proj": projection(session, ref, horizonte),
+            "horizonte": horizonte,
             "grafico": receitas_despesas_mensal(session, ref),
         },
     )
@@ -484,3 +489,54 @@ def delete_recurring(rule_id: int, session: Session = Depends(get_session)):
     delete_rule(session, rule)
     session.commit()
     return RedirectResponse("/recorrentes", status_code=303)
+
+@app.get("/configuracoes")
+def configuracoes_page(request: Request, session: Session = Depends(get_session)):
+    tamanho = DB_PATH.stat().st_size / 1024 / 1024 if DB_PATH.exists() else 0
+    return templates.TemplateResponse(
+        request,
+        "configuracoes.html",
+        {
+            "horizonte": int(get_setting(session, "projecao_meses")),
+            "tamanho_mb": f"{tamanho:.2f}".replace(".", ","),
+        },
+    )
+
+
+@app.get("/configuracoes/backup")
+def baixar_backup():
+    nome = f"financas-backup-{date.today():%Y-%m-%d}.db"
+    return FileResponse(DB_PATH, filename=nome, media_type="application/octet-stream")
+
+
+@app.post("/configuracoes/importar")
+async def importar_backup(arquivo: UploadFile = File(...)):
+    conteudo = await arquivo.read()
+    if not conteudo.startswith(b"SQLite format 3\x00"):
+        raise HTTPException(status_code=400, detail="O arquivo não é um banco SQLite válido")
+    engine.dispose()
+    if DB_PATH.exists():
+        shutil.copyfile(DB_PATH, DB_PATH.with_name("finance-antes-da-importacao.db"))
+    DB_PATH.write_bytes(conteudo)
+    init_db()
+    return RedirectResponse("/configuracoes", status_code=303)
+
+
+@app.post("/configuracoes/apagar")
+def apagar_dados(confirmacao: str = Form(...), session: Session = Depends(get_session)):
+    if confirmacao.strip() != "APAGAR":
+        raise HTTPException(status_code=400, detail="Digite APAGAR para confirmar")
+    for table in reversed(SQLModel.metadata.sorted_tables):
+        if table.name == "setting":
+            continue
+        session.execute(table.delete())
+    session.commit()
+    return RedirectResponse("/configuracoes", status_code=303)
+
+
+@app.post("/configuracoes/projecao")
+def salvar_projecao(meses: int = Form(...), session: Session = Depends(get_session)):
+    if not 1 <= meses <= 12:
+        raise HTTPException(status_code=400, detail="Use de 1 a 12 meses")
+    set_setting(session, "projecao_meses", str(meses))
+    return RedirectResponse("/configuracoes", status_code=303)
