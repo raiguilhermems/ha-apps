@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.4
+- Tags renomeadas para Categorias nas telas. O endereço agora é /categorias, e o antigo /tags redireciona.
+
 ## 0.0.3
 - Nova aba Configurações: projeção de 1 a 12 meses, backup (baixar e importar) e apagar dados com confirmação.
 

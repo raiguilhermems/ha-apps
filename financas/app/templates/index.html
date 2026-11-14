@@ -53,7 +53,7 @@
         </select>
       </label>
       <label>Terceiros (R$, só despesa)<input name="third_party" placeholder="0,00"></label>
-      <label>Tags (separadas por vírgula)<input name="tags" placeholder="mercado, terceiro"></label>
+      <label>Categorias (separadas por vírgula)<input name="tags" placeholder="mercado, terceiro"></label>
       <button type="submit" class="primary">Adicionar</button>
     </form>
   </div>
@@ -61,7 +61,7 @@
   <h2>Lançamentos do mês</h2>
   <div class="panel">
     <table>
-      <thead><tr><th>Venc.</th><th>Descrição</th><th>Tags</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>Venc.</th><th>Descrição</th><th>Categorias</th><th>Valor</th><th>Status</th><th></th></tr></thead>
       <tbody>
       {% for t in txs %}
       {% set atrasada = t.kind == 'despesa' and t.status == 'pendente' and t.due_date < today %}

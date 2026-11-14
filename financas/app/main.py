@@ -300,15 +300,20 @@ def delete_installment(plan_id: int, session: Session = Depends(get_session)):
     return RedirectResponse("/parcelados", status_code=303)
 
 
-# ---------- Tags ----------
+# ---------- Categorias ----------
 
-@app.get("/tags")
+@app.get("/categorias")
 def tags_page(request: Request, session: Session = Depends(get_session)):
     tags = session.exec(select(Tag).order_by(Tag.name)).all()
     return templates.TemplateResponse(request, "tags.html", {"tags": tags})
 
 
-@app.post("/tags")
+@app.get("/tags")
+def tags_antigo():
+    return RedirectResponse("/categorias", status_code=303)
+
+
+@app.post("/categorias")
 def create_tag(
     name: str = Form(...),
     excludes: bool = Form(False),
@@ -321,10 +326,10 @@ def create_tag(
     tag.excludes_from_total = excludes
     session.add(tag)
     session.commit()
-    return RedirectResponse("/tags", status_code=303)
+    return RedirectResponse("/categorias", status_code=303)
 
 
-@app.post("/tags/{tag_id}/atualizar")
+@app.post("/categorias/{tag_id}/atualizar")
 def update_tag(
     tag_id: int,
     name: str = Form(...),
@@ -344,10 +349,10 @@ def update_tag(
     tag.excludes_from_total = excludes
     session.add(tag)
     session.commit()
-    return RedirectResponse("/tags", status_code=303)
+    return RedirectResponse("/categorias", status_code=303)
 
 
-@app.post("/tags/{tag_id}/excluir")
+@app.post("/categorias/{tag_id}/excluir")
 def delete_tag(tag_id: int, session: Session = Depends(get_session)):
     tag = session.get(Tag, tag_id)
     if tag is None:
@@ -356,10 +361,10 @@ def delete_tag(tag_id: int, session: Session = Depends(get_session)):
         session.delete(link)
     session.delete(tag)
     session.commit()
-    return RedirectResponse("/tags", status_code=303)
+    return RedirectResponse("/categorias", status_code=303)
 
 
-@app.get("/tags/{tag_id}")
+@app.get("/categorias/{tag_id}")
 def tag_report(tag_id: int, request: Request, mes: str | None = None, session: Session = Depends(get_session)):
     tag = session.get(Tag, tag_id)
     if tag is None:

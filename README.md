@@ -15,7 +15,7 @@ Controle financeiro pessoal, autohospedado, rodando como add-on do Home Assistan
 - Despesas com valor de terceiros: a parte que não é sua sai do total.
 - Recorrentes: regras mensais que geram lançamentos nos próximos 12 meses. Podem ter valor fixo ou variável (estimativa, ajustada mês a mês).
 - Parcelados: boleto, carnê, financiamento ou cartão. Parcelas de cartão ficam só na aba Parcelados.
-- Tags, com filtro por mês. A tag "terceiro" não entra no total.
+- Categorias, com filtro por mês. A tag "terceiro" não entra no total.
 - Projeção dos próximos meses: compromissos cadastrados mais a média dos gastos avulsos.
 - Gráficos de receitas × despesas por mês e de parcelas por mês.
 - Configurações: horizonte da projeção, backup, importação e apagar dados.
