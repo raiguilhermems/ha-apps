@@ -175,4 +175,15 @@
     border-color: transparent; background: none;
     color: var(--accent, #4f8cff); font-size: .85rem;
   }
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px; }
+    .topbar-inner { flex-wrap: wrap; gap: .5rem; }
+    .menu { flex-wrap: wrap; gap: .25rem .75rem; }
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .grid { grid-template-columns: 1fr; }
+    .panel { overflow-x: auto; }
+    table { font-size: .85rem; }
+    th, td { padding: .35rem; }
+    .monthnav strong, .monthbar strong { min-width: 7rem; font-size: 1.05rem; }
+  }
 </style>
