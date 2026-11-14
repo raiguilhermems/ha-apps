@@ -2,6 +2,13 @@
 
 Controle financeiro pessoal, autohospedado, rodando como add-on do Home Assistant. Acesso pelo painel lateral do Home Assistant (ingress), sem login próprio.
 
+## Telas
+
+![Início](docs/inicio.png)
+![Parcelados](docs/parcelados.png)
+![Recorrentes](docs/recorrentes.png)
+![Configurações](docs/configuracoes.png)
+
 ## O que faz
 
 - Lançamentos de receitas e despesas por mês, pela data de vencimento (regime de caixa).
@@ -12,6 +19,14 @@ Controle financeiro pessoal, autohospedado, rodando como add-on do Home Assistan
 - Projeção dos próximos meses: compromissos cadastrados mais a média dos gastos avulsos.
 - Gráficos de receitas × despesas por mês e de parcelas por mês.
 - Configurações: horizonte da projeção, backup, importação e apagar dados.
+
+## Últimas versões
+
+- **0.0.3**: nova aba Configurações, com projeção de 1 a 12 meses, backup (baixar e importar) e apagar dados com confirmação.
+- **0.0.2**: layout adaptado para celular.
+- **0.0.1**: primeira versão no Home Assistant.
+
+Histórico completo em [CHANGELOG completo](financas/CHANGELOG.md).
 
 ## Instalação no Home Assistant
 
@@ -32,7 +47,7 @@ Abra http://127.0.0.1:8000 no navegador. O banco de teste fica em finance-dev.db
 
 ## Dados
 
-O banco SQLite fica em /data/finance.db dentro do add-on e não é versionado. Para salvar seus dados, baixe um backup pela aba Configurações antes de atualizar ou apagar qualquer coisa.
+O banco SQLite fica em /data/finance.db dentro do add-on e não é versionado. Antes de atualizar ou apagar qualquer coisa, baixe um backup pela aba Configurações.
 
 ## Estrutura
 
@@ -42,7 +57,3 @@ O banco SQLite fica em /data/finance.db dentro do add-on e não é versionado. P
 - financas/app/services/: regras de negócio (recorrentes, parcelados, projeção, resumo e gráficos).
 - financas/app/templates/: telas em Jinja2.
 - financas/CHANGELOG.md: histórico de versões.
-
-## Versões
-
-O histórico de mudanças está em financas/CHANGELOG.md.
