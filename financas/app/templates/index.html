@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finanças — {{ ref | mes }}</title>
+  {% include "_style.html" %}
+</head>
+<body>
+{% include "_nav.html" %}
+<div class="wrap">
+  <nav class="monthnav">
+    <a href="{{ base() }}/?mes={{ prev }}" class="arrow" aria-label="Mês anterior">‹</a>
+    <strong>{{ ref | mes }}</strong>
+    <a href="{{ base() }}/?mes={{ next }}" class="arrow" aria-label="Próximo mês">›</a>
+    {% if ref != today.strftime('%Y-%m') %}<a href="{{ base() }}/" class="hoje">Hoje</a>{% endif %}
+  </nav>
+
+  <section class="cards">
+    <div class="card"><small>Receitas</small><div class="val">{{ s.receitas_total | brl }}</div></div>
+    <div class="card"><small>Despesas</small><div class="val">{{ s.despesas_total | brl }}</div></div>
+    <div class="card"><small>Saldo</small><div class="val">{{ s.saldo | brl }}</div></div>
+    <div class="card"><small>Já pago</small><div class="val ok">{{ s.pago | brl }}</div></div>
+    <div class="card"><small>A pagar</small><div class="val">{{ s.a_pagar | brl }}</div></div>
+  </section>
+
+  {% if atrasados %}
+  <div class="panel" style="border-color: var(--bad);">
+    <strong>Atrasados (todos os meses): {{ atrasados | length }} itens · {{ atrasados | sum(attribute='valor') | brl }}</strong>
+    <ul>
+      {% for a in atrasados %}
+      <li>{{ a.vencimento.strftime('%d/%m/%Y') }} — {{ a.descricao }} — {{ a.valor | brl }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <h2>Receitas × despesas por mês</h2>
+  <div class="panel">
+    <div style="position:relative;height:280px"><canvas id="chartMensal"></canvas></div>
+  </div>
+
+  <h2>Novo lançamento</h2>
+  <div class="panel">
+    <form class="grid" method="post" action="{{ base() }}/lancamentos">
+      <label>Descrição<input name="description" required></label>
+      <label>Valor (R$)<input name="amount" placeholder="1.234,56" required></label>
+      <label>Vencimento<input type="date" name="due_date" value="{{ today }}" required></label>
+      <label>Tipo
+        <select name="kind">
+          <option value="despesa">Despesa</option>
+          <option value="receita">Receita</option>
+        </select>
+      </label>
+      <label>Terceiros (R$, só despesa)<input name="third_party" placeholder="0,00"></label>
+      <label>Tags (separadas por vírgula)<input name="tags" placeholder="mercado, terceiro"></label>
+      <button type="submit" class="primary">Adicionar</button>
+    </form>
+  </div>
+
+  <h2>Lançamentos do mês</h2>
+  <div class="panel">
+    <table>
+      <thead><tr><th>Venc.</th><th>Descrição</th><th>Tags</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for t in txs %}
+      {% set atrasada = t.kind == 'despesa' and t.status == 'pendente' and t.due_date < today %}
+      <tr>
+        <td>{{ t.due_date.strftime('%d/%m') }}</td>
+        <td>
+          {{ t.description }}
+          {% if t.recurring_rule_id %}<span class="muted" title="Recorrente">↻</span>{% endif %}
+          {% if t.third_party_cents %}<span class="pill">terceiros {{ t.third_party_cents | brl }}</span>{% endif %}
+        </td>
+        <td>
+          {% for tg in tag_map.get(t.id, []) %}<span class="pill">{{ tg.name if tg.name is defined else tg }}</span> {% endfor %}
+        </td>
+        <td>{{ t.amount_cents | brl }}</td>
+        <td>
+          {% if t.status == 'pago' %}
+            <span class="pill ok">{{ 'recebido' if t.kind == 'receita' else 'pago' }}</span>
+          {% elif atrasada %}
+            <span class="pill bad">atrasado</span>
+          {% else %}
+            <span class="pill">{{ 'a receber' if t.kind == 'receita' else 'pendente' }}</span>
+          {% endif %}
+        </td>
+        <td>
+          <form class="inline" method="post" action="{{ base() }}/transacoes/{{ t.id }}/pagar">
+            <input type="hidden" name="mes" value="{{ ref }}">
+            <button type="submit" class="small">
+              {% if t.status == 'pago' %}Desfazer{% elif t.kind == 'receita' %}Marcar recebido{% else %}Marcar pago{% endif %}
+            </button>
+          </form>
+          <a class="btn small" href="{{ base() }}/lancamentos/{{ t.id }}/editar">Editar</a>
+          <form class="inline" method="post" action="{{ base() }}/transacoes/{{ t.id }}/excluir" onsubmit="return confirm('Excluir este lançamento?')">
+            <input type="hidden" name="mes" value="{{ ref }}">
+            <button type="submit" class="danger small">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="muted">Nenhum lançamento neste mês.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Projeção (próximos 3 meses)</h2>
+  <div class="panel">
+    <p class="aviso"><strong>Estimativa, não é saldo garantido.</strong> Soma os compromissos cadastrados (recorrentes pelo valor da regra e parcelas) com a média dos gastos avulsos dos últimos 3 meses.</p>
+    <table>
+      <thead><tr><th>Mês</th><th>Compromissos</th><th>Gastos avulsos (média)</th><th>Total estimado</th></tr></thead>
+      <tbody>
+      {% for p in proj %}
+      <tr>
+        <td>{{ p.mes | mes }}</td>
+        <td>{{ p.compromissos | brl }}</td>
+        <td>{{ p.variavel | brl }}</td>
+        <td>{{ p.total | brl }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+Chart.defaults.color = '#9aa3b2';
+Chart.defaults.borderColor = '#2a2f3a';
+const reais = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const G = {{ grafico | tojson }};
+new Chart(document.getElementById('chartMensal'), {
+  type: 'bar',
+  data: {
+    labels: G.labels,
+    datasets: [
+      { label: 'Receitas', data: G.receitas, backgroundColor: '#34d399' },
+      { label: 'Despesas', data: G.despesas, backgroundColor: '#f87171' }
+    ]
+  },
+  options: {
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true, ticks: { callback: v => reais(v) } } },
+    plugins: { tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + reais(c.parsed.y) } } }
+  }
+});
+</script>
+</body>
+</html>

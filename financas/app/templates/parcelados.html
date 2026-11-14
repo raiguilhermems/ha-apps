@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parcelados</title>
+  {% include "_style.html" %}
+</head>
+<body>
+{% include "_nav.html" %}
+<div class="wrap">
+  <h1>Parcelados</h1>
+
+  <section class="cards">
+    <div class="card"><small>Saldo devedor total</small><div class="val bad">{{ saldo_total | brl }}</div></div>
+    <div class="card"><small>Parcelamentos ativos</small><div class="val">{{ plans | rejectattr('concluido') | list | length }}</div></div>
+  </section>
+
+  <h2>Parcelas por mês (próximos 12 meses)</h2>
+  <div class="panel">
+    <div style="position:relative;height:280px"><canvas id="chartParcelas"></canvas></div>
+  </div>
+
+  <h2>Novo parcelamento</h2>
+  <div class="panel">
+    <form class="grid" method="post" action="{{ base() }}/parcelados">
+      <label>Descrição<input name="description" required></label>
+      <label>Forma de pagamento
+        <select name="payment_method">
+          <option value="cartao">Cartão</option>
+          <option value="boleto">Boleto</option>
+          <option value="carne">Carnê</option>
+          <option value="financiamento">Financiamento</option>
+          <option value="outro">Outro</option>
+        </select>
+      </label>
+      <label>Cartão (se for cartão)
+        <input name="card_name" list="cartoes" placeholder="Ex.: Nubank">
+        <datalist id="cartoes">
+          {% for c in cards %}<option value="{{ c.name }}">{% endfor %}
+        </datalist>
+      </label>
+      <label>Valor da parcela (R$)<input name="amount" placeholder="150,00" required></label>
+      <label>Total de parcelas<input type="number" name="total" min="1" required></label>
+      <label>Parcela atual<input type="number" name="current_n" min="1" value="1" required></label>
+      <label>Mês da parcela atual<input type="month" name="current_ref" value="{{ ref }}" required></label>
+      <label>Dia do vencimento<input type="number" name="due_day" min="1" max="31" value="10" required></label>
+      <button type="submit" class="primary">Cadastrar</button>
+    </form>
+    <p class="aviso">Parcelas de cartão ficam só nesta tela, porque já estão na fatura. Marque cada uma como paga quando a fatura for paga. As demais entram no Início automaticamente, no mês de cada parcela.</p>
+  </div>
+
+  {% if plans %}
+    {% for plan in plans %}
+    <h2>{{ plan.descricao }}</h2>
+    <div class="panel">
+      <p>
+        <span class="pill">{{ plan.forma_label }}</span>
+        <span class="pill">{{ plan.parcela | brl }} por mês</span>
+        {% if plan.concluido %}<span class="pill ok">Concluído</span>{% endif %}
+      </p>
+      <p class="aviso">{{ plan.pagas }} de {{ plan.total }} pagas · restam {{ plan.restantes }} · saldo {{ plan.saldo | brl }}</p>
+      <table>
+        <thead><tr><th>Parcela</th><th>Mês</th><th>Vencimento</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for r in plan.rows %}
+        <tr>
+          <td>{{ r.n }}/{{ plan.total }}</td>
+          <td>{{ r.mes | mes }}</td>
+          <td>{{ r.vencimento.strftime('%d/%m/%Y') }}</td>
+          <td>{{ r.valor | brl }}</td>
+          <td>
+            {% if r.status == 'pago' %}<span class="pill ok">Paga</span>
+            {% elif r.status == 'atrasada' %}<span class="pill bad">Atrasada</span>
+            {% elif r.status == 'passada' %}<span class="pill">Anterior</span>
+            {% else %}<span class="pill">Pendente</span>{% endif %}
+          </td>
+          <td>
+            {% if r.tx_id %}
+            <form class="inline" method="post" action="{{ base() }}/parcelados/tx/{{ r.tx_id }}/pagar">
+              <button type="submit" class="small">{{ 'Desmarcar' if r.status == 'pago' else 'Marcar paga' }}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <form class="inline" method="post" action="{{ base() }}/parcelados/{{ plan.id }}/excluir" onsubmit="return confirm('Excluir este parcelamento? As parcelas pendentes serão apagadas.')">
+        <button type="submit" class="danger">Excluir parcelamento</button>
+      </form>
+    </div>
+    {% endfor %}
+  {% else %}
+  <p class="muted">Nenhum parcelamento cadastrado.</p>
+  {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+Chart.defaults.color = '#9aa3b2';
+Chart.defaults.borderColor = '#2a2f3a';
+const reais = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const G = {{ graficos | tojson }};
+new Chart(document.getElementById('chartParcelas'), {
+  type: 'bar',
+  data: {
+    labels: G.labels,
+    datasets: [{ label: 'Parcelas', data: G.totais, backgroundColor: '#4f8cff' }]
+  },
+  options: {
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: c => ' ' + reais(c.parsed.y) } }
+    },
+    scales: { y: { beginAtZero: true, ticks: { callback: v => reais(v) } } }
+  }
+});
+</script>
+</body>
+</html>

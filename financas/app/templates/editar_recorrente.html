@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Editar recorrência</title>
+  {% include "_style.html" %}
+</head>
+<body>
+{% include "_nav.html" %}
+<div class="wrap">
+  <h1>Editar recorrência</h1>
+  <div class="panel">
+    <form class="grid" method="post" action="{{ base() }}/recorrentes/{{ rule.id }}/editar">
+      <label>Descrição<input name="description" value="{{ rule.description }}" required></label>
+      <label>Valor (R$)<input name="amount" value="{{ '%.2f'|format(rule.expected_cents / 100) | replace('.', ',') }}" required></label>
+      <label>Dia do mês<input type="number" name="day" min="1" max="31" value="{{ rule.day_of_month }}" required></label>
+      <label>Tipo
+        <select name="kind" onchange="toggleCartao(this)">
+          <option value="despesa" {{ 'selected' if rule.kind == 'despesa' }}>Despesa</option>
+          <option value="receita" {{ 'selected' if rule.kind == 'receita' }}>Receita</option>
+        </select>
+      </label>
+      <label data-cartao>Cartão (opcional)
+        <input name="card_name" list="cartoes" value="{{ card_name }}" placeholder="Ex.: Nubank">
+        <datalist id="cartoes">
+          {% for c in cards %}<option value="{{ c.name }}">{% endfor %}
+        </datalist>
+      </label>
+      <label class="check"><input type="checkbox" name="variable" {{ 'checked' if rule.variable }}> Valor variável (ex.: luz)</label>
+      <button type="submit" class="primary">Salvar</button>
+    </form>
+    <p class="aviso">Atualiza os lançamentos pendentes a partir deste mês que ainda não estão em fatura. Os já pagos não mudam. Valores que você ajustou à mão no Início são mantidos.</p>
+  </div>
+  <p><a href="{{ base() }}/recorrentes">‹ Voltar</a></p>
+</div>
+<script>
+function toggleCartao(sel) {
+  const box = sel.form.querySelector('[data-cartao]');
+  const isDespesa = sel.value === 'despesa';
+  box.style.display = isDespesa ? '' : 'none';
+  if (!isDespesa) box.querySelector('input').value = '';
+}
+document.querySelectorAll('select[name="kind"]').forEach(toggleCartao);
+</script>
+</body>
+</html>

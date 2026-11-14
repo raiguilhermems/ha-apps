@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tags</title>
+  {% include "_style.html" %}
+</head>
+<body>
+{% include "_nav.html" %}
+<div class="wrap">
+  <h1>Tags</h1>
+  <p class="aviso">Use tags para agrupar lançamentos, inclusive os de fatura do cartão. Marque "Não soma no total" para que os lançamentos com a tag saiam do total do mês, como ocorre com terceiros.</p>
+
+  <h2>Nova tag</h2>
+  <div class="panel">
+    <form class="grid" method="post" action="{{ base() }}/tags">
+      <label>Nome<input name="name" placeholder="ex.: mercado" required></label>
+      <label class="check"><input type="checkbox" name="excludes"> Não soma no total</label>
+      <button type="submit" class="primary">Criar</button>
+    </form>
+  </div>
+
+  <h2>Tags cadastradas</h2>
+  {% if tags %}
+  <table>
+    <thead><tr><th>Nome e regra</th><th></th><th></th></tr></thead>
+    <tbody>
+    {% for t in tags %}
+    <tr>
+      <td>
+        <form class="inline" method="post" action="{{ base() }}/tags/{{ t.id }}/atualizar">
+          <input name="name" value="{{ t.name }}" required style="width:auto;display:inline-block">
+          <label class="check" style="display:inline-flex;margin-left:.5rem">
+            <input type="checkbox" name="excludes" {{ 'checked' if t.excludes_from_total }}> Não soma no total
+          </label>
+          <button type="submit" class="small">Salvar</button>
+        </form>
+      </td>
+      <td><a class="btn small" href="{{ base() }}/tags/{{ t.id }}">Ver lançamentos</a></td>
+      <td>
+        <form class="inline" method="post" action="{{ base() }}/tags/{{ t.id }}/excluir" onsubmit="return confirm('Excluir esta tag? Ela será removida de todos os lançamentos.')">
+          <button type="submit" class="small danger">Excluir</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Nenhuma tag cadastrada ainda.</p>
+  {% endif %}
+</div>
+</body>
+</html>

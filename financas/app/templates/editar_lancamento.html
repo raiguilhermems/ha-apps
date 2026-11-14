@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Editar lançamento</title>
+  {% include "_style.html" %}
+</head>
+<body>
+{% include "_nav.html" %}
+<div class="wrap">
+  <h1>Editar lançamento</h1>
+  <div class="panel">
+    <form class="grid" method="post" action="{{ base() }}/lancamentos/{{ tx.id }}/editar">
+      <label>Descrição<input name="description" value="{{ tx.description }}" required></label>
+      <label>Valor (R$)<input name="amount" value="{{ '%.2f'|format(tx.amount_cents / 100) | replace('.', ',') }}" required></label>
+      <label>Vencimento<input type="date" name="due_date" value="{{ tx.due_date.isoformat() }}" required></label>
+      <label>Tipo
+        <select name="kind">
+          <option value="despesa" {{ 'selected' if tx.kind == 'despesa' }}>Despesa</option>
+          <option value="receita" {{ 'selected' if tx.kind == 'receita' }}>Receita</option>
+        </select>
+      </label>
+      <label>Terceiros (R$)<input name="third_party" value="{{ third_text }}" placeholder="0,00"></label>
+      <label>Tags<input name="tags" value="{{ tags_text }}" placeholder="ex.: mercado, lazer"></label>
+      <button type="submit" class="primary">Salvar</button>
+    </form>
+  </div>
+  <p><a href="{{ base() }}/?mes={{ tx.due_date.strftime('%Y-%m') }}">‹ Voltar</a></p>
+</div>
+</body>
+</html>

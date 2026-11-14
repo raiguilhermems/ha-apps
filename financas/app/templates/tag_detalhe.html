@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tag {{ tag.name }}</title>
+  {% include "_style.html" %}
+</head>
+<body>
+{% include "_nav.html" %}
+<div class="wrap">
+  <p><a href="{{ base() }}/tags">‹ Tags</a></p>
+  <h1>#{{ tag.name }}
+    {% if tag.excludes_from_total %}<span class="pill">não soma no total</span>{% endif %}
+  </h1>
+
+  <div class="monthbar">
+    <a href="{{ base() }}/tags/{{ tag.id }}?mes={{ prev }}">‹ {{ prev | mes }}</a>
+    <strong>{{ ref | mes }}</strong>
+    <a href="{{ base() }}/tags/{{ tag.id }}?mes={{ next }}">{{ next | mes }} ›</a>
+  </div>
+
+  <section class="cards">
+    <div class="card"><small>Despesas com esta tag</small><div class="val">{{ despesas | brl }}</div></div>
+    <div class="card"><small>Receitas com esta tag</small><div class="val pago">{{ receitas | brl }}</div></div>
+  </section>
+
+  <h2>Lançamentos no mês</h2>
+  {% if rows %}
+  <table>
+    <thead><tr><th>Vencimento</th><th>Descrição</th><th>Conta</th><th>Tipo</th><th>Valor</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.tx.due_date.strftime('%d/%m') }}</td>
+      <td>{{ r.tx.description }}</td>
+      <td class="muted">{{ r.conta }}</td>
+      <td class="muted">{{ 'Despesa' if r.tx.kind == 'despesa' else 'Receita' }}</td>
+      <td>{{ r.tx.amount_cents | brl }}</td>
+      <td>
+        {% if r.tx.status == 'pago' %}<span class="pill ok">Pago</span>
+        {% else %}<span class="pill">Pendente</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Nenhum lançamento com esta tag neste mês.</p>
+  {% endif %}
+</div>
+</body>
+</html>
