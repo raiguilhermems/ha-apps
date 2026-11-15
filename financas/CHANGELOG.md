@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.9
+- Parcelados podem ser editados: descrição, valor da parcela, dia do vencimento e categorias. As alterações valem para as parcelas pendentes; as pagas não mudam.
+- Botão Editar na lista de parcelados.
+- Formulários de parcelados passam a respeitar o endereço do Home Assistant.
+
 ## 0.0.8
 - Recorrentes e parcelados aceitam categorias. Os lançamentos gerados já saem com elas.
 - Editar uma recorrência atualiza as categorias dos lançamentos pendentes.

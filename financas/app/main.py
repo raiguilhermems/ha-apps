@@ -28,7 +28,7 @@ from app.db import DB_PATH, engine, get_session, init_db
 from app.models import Account, InstallmentPlan, RecurringRule, Tag, Transaction, TransactionTag
 from app.services.debts import delete_plan
 from app.services.edit import update_rule, update_transaction
-from app.services.parcelados import create_plan, generate_installments, schedule_summaries
+from app.services.parcelados import FORMAS, create_plan, generate_installments, schedule_summaries, update_plan
 from app.services.projections import projection
 from app.services.recurring import create_rule, delete_rule, generate_all, rule_month_status, set_active
 from app.services.summary import card_account_ids, monthly_summary, overdue_items
@@ -571,3 +571,43 @@ def salvar_dia_padrao(dia: int = Form(...), session: Session = Depends(get_sessi
         raise HTTPException(status_code=400, detail="Use 0 (1º dia útil) ou de 1 a 31")
     set_setting(session, "dia_padrao", str(dia))
     return RedirectResponse("/configuracoes", status_code=303)
+
+
+@app.get("/parcelados/{plan_id}/editar")
+def editar_parcelado_page(plan_id: int, request: Request, session: Session = Depends(get_session)):
+    plan = session.get(InstallmentPlan, plan_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail="Parcelamento não encontrado")
+    cartao = ""
+    if plan.account_id:
+        conta = session.get(Account, plan.account_id)
+        cartao = conta.name if conta else ""
+    return templates.TemplateResponse(
+        request,
+        "editar_parcelado.html",
+        {
+            "plan": plan,
+            "forma": FORMAS.get(plan.payment_method, plan.payment_method),
+            "cartao": cartao,
+            "categorias": plan.tags_text,
+        },
+    )
+
+
+@app.post("/parcelados/{plan_id}/editar")
+def editar_parcelado(
+    plan_id: int,
+    description: str = Form(...),
+    amount: str = Form(...),
+    due_day: int = Form(...),
+    categorias: str = Form(""),
+    session: Session = Depends(get_session),
+):
+    plan = session.get(InstallmentPlan, plan_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail="Parcelamento não encontrado")
+    if not 0 <= due_day <= 31:
+        raise HTTPException(status_code=400, detail="Dia do vencimento inválido")
+    update_plan(session, plan, description, parse_brl(amount), due_day, categorias)
+    session.commit()
+    return RedirectResponse("/parcelados", status_code=303)

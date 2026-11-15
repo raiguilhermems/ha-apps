@@ -168,3 +168,34 @@ def schedule_summaries(session: Session) -> dict:
 
     plans_out.sort(key=lambda r: (r["concluido"], r["descricao"]))
     return {"plans": plans_out, "saldo_total": saldo_total}
+
+
+def update_plan(
+    session: Session,
+    plan: InstallmentPlan,
+    description: str,
+    installment_cents: int,
+    due_day: int,
+    categorias: str = "",
+) -> None:
+    """Atualiza o parcelamento. Só as parcelas pendentes são alteradas; as pagas não mudam."""
+    plan.description = description.strip()
+    plan.installment_cents = installment_cents
+    plan.due_day = due_day
+    plan.tags_text = ", ".join(parse_tags(categorias))
+    session.add(plan)
+    session.flush()
+
+    pendentes = session.exec(
+        select(Transaction).where(
+            Transaction.installment_plan_id == plan.id,
+            Transaction.status == "pendente",
+        )
+    ).all()
+    for t in pendentes:
+        t.description = f"{plan.description} ({t.installment_n}/{plan.installments_total})"
+        t.amount_cents = installment_cents
+        t.due_date = due_in_month(t.due_date.strftime("%Y-%m"), due_day)
+        session.add(t)
+        session.flush()
+        set_tags(session, t, parse_tags(plan.tags_text))
