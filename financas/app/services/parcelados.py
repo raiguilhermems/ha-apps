@@ -4,7 +4,7 @@ from datetime import date
 
 from sqlmodel import Session, select
 
-from app.models import Account, InstallmentPlan, Transaction
+from app.models import Account, InstallmentPlan, Tag, Transaction
 from app.services.recurring import get_or_create_card
 from app.services.tags import parse_tags, set_tags
 from app.services.util import add_months, current_month, due_in_month
@@ -101,6 +101,7 @@ def schedule_summaries(session: Session) -> dict:
     today = date.today()
     plans_out = []
     saldo_total = 0
+    tags_map = {c.name: c.id for c in session.exec(select(Tag)).all()}
 
     for p in session.exec(select(InstallmentPlan)).all():
         txs = session.exec(
@@ -156,6 +157,7 @@ def schedule_summaries(session: Session) -> dict:
         plans_out.append({
             "id": p.id,
             "descricao": p.description,
+            "categorias": [{"nome": n, "id": tags_map.get(n)} for n in parse_tags(p.tags_text)],
             "forma_label": f"Cartão {cartao_nome}".strip() if p.payment_method == "cartao" else FORMAS.get(p.payment_method, p.payment_method),
             "parcela": p.installment_cents,
             "total": p.installments_total,

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.10
+- Categorias aparecem como caixinhas clicáveis em Recorrentes e Parcelados, e abrem o detalhamento da categoria.
+- Cartão aparece como caixinha na lista de recorrentes, no mesmo estilo do valor das parcelas.
+
 ## 0.0.9
 - Parcelados podem ser editados: descrição, valor da parcela, dia do vencimento e categorias. As alterações valem para as parcelas pendentes; as pagas não mudam.
 - Botão Editar na lista de parcelados.

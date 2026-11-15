@@ -83,14 +83,15 @@
     <tbody>
     {% for r in rows %}
     <tr>
-      <td>{{ r.rule.description }}</td>
+      <td>{{ r.rule.description }}
+        {% for c in r.cats %}{% if c.id %}<a class="pill" href="{{ base() }}/categorias/{{ c.id }}">{{ c.nome }}</a>{% else %}<span class="pill">{{ c.nome }}</span>{% endif %}{% endfor %}</td>
       <td class="muted">{{ 'Despesa' if r.rule.kind == 'despesa' else 'Receita' }}</td>
       <td>
         {{ r.rule.expected_cents | brl }}
         {% if r.rule.variable %}<span class="pill">variável</span>{% endif %}
       </td>
       <td>{{ '1º dia útil' if r.rule.day_of_month == 0 else r.rule.day_of_month }}</td>
-      <td class="muted">{{ r.cartao }}</td>
+      <td>{% if r.cartao != '—' %}<span class="pill">{{ r.cartao }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
       <td>{% if r.rule.active %}<span class="pill ok">Ativa</span>{% else %}<span class="pill">Pausada</span>{% endif %}</td>
       <td>
         <a class="btn small" href="{{ base() }}/recorrentes/{{ r.rule.id }}/editar">Editar</a>

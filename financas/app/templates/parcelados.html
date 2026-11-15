@@ -72,6 +72,7 @@
       <p>
         <span class="pill">{{ plan.forma_label }}</span>
         <span class="pill">{{ plan.parcela | brl }} por mês</span>
+        {% for c in plan.categorias %}{% if c.id %}<a class="pill" href="{{ base() }}/categorias/{{ c.id }}">{{ c.nome }}</a>{% else %}<span class="pill">{{ c.nome }}</span>{% endif %}{% endfor %}
         {% if plan.concluido %}<span class="pill ok">Concluído</span>{% endif %}
       </p>
       <p class="aviso">{{ plan.pagas }} de {{ plan.total }} pagas · restam {{ plan.restantes }} · saldo {{ plan.saldo | brl }}</p>

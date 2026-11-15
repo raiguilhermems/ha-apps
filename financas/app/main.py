@@ -406,10 +406,12 @@ def tag_report(tag_id: int, request: Request, mes: str | None = None, session: S
 def recorrentes_page(request: Request, mes: str | None = None, session: Session = Depends(get_session)):
     ref = mes or current_month()
     rules = session.exec(select(RecurringRule).order_by(RecurringRule.description)).all()
+    ids = {c.name: c.id for c in session.exec(select(Tag)).all()}
     rows = []
     for r in rules:
         card = session.get(Account, r.account_id) if r.account_id else None
-        rows.append({"rule": r, "cartao": card.name if card else "—"})
+        cats = [{"nome": n, "id": ids.get(n)} for n in parse_tags(r.tags_text)]
+        rows.append({"rule": r, "cartao": card.name if card else "—", "cats": cats})
     cards = session.exec(select(Account).where(Account.type == "cartao")).all()
     return templates.TemplateResponse(
         request,
