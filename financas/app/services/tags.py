@@ -78,3 +78,12 @@ def transactions_with_tag(
             .order_by(Transaction.due_date)
         ).all()
     )
+
+def mark_third_party(session: Session, tx: Transaction) -> None:
+    """Marca o lançamento como terceiro (categoria 'terceiro', não soma no total)."""
+    tag = session.exec(select(Tag).where(Tag.name == "terceiro")).first()
+    if tag is None:
+        tag = Tag(name="terceiro", excludes_from_total=True)
+        session.add(tag)
+        session.flush()
+    session.add(TransactionTag(transaction_id=tx.id, tag_id=tag.id))

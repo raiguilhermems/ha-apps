@@ -5,7 +5,7 @@ from datetime import date
 from sqlmodel import Session, select
 
 from app.models import RecurringRule, Tag, Transaction, TransactionTag
-from app.services.debts import mark_third_party
+from app.services.tags import mark_third_party
 from app.services.recurring import _account_for
 from app.services.tags import parse_tags, set_tags
 from app.services.util import current_month, due_in_month, month_bounds

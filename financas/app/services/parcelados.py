@@ -3,6 +3,7 @@
 from datetime import date
 
 from sqlmodel import Session, select
+from app.models import TransactionTag
 
 from app.models import Account, InstallmentPlan, Tag, Transaction
 from app.services.recurring import get_or_create_card
@@ -201,3 +202,22 @@ def update_plan(
         session.add(t)
         session.flush()
         set_tags(session, t, parse_tags(plan.tags_text))
+
+
+def delete_plan(session: Session, plan: InstallmentPlan) -> None:
+    """Apaga as parcelas pendentes. As já pagas ficam como histórico, sem vínculo."""
+    for t in session.exec(
+        select(Transaction).where(Transaction.installment_plan_id == plan.id)
+    ).all():
+        if t.status == "pendente":
+            for link in session.exec(
+                select(TransactionTag).where(TransactionTag.transaction_id == t.id)
+            ).all():
+                session.delete(link)
+            session.delete(t)
+        else:
+            t.installment_plan_id = None
+            t.installment_n = None
+            session.add(t)
+    session.flush()
+    session.delete(plan)

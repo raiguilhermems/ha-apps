@@ -26,7 +26,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.db import DB_PATH, engine, get_session, init_db
 from app.models import Account, InstallmentPlan, RecurringRule, Tag, Transaction, TransactionTag
-from app.services.debts import delete_plan
+from app.services.parcelados import delete_plan
 from app.services.edit import update_rule, update_transaction
 from app.services.parcelados import FORMAS, create_plan, generate_installments, schedule_summaries, update_plan
 from app.services.projections import projection
