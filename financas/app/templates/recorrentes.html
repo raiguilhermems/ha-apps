@@ -35,6 +35,7 @@
           {% for c in cards %}<option value="{{ c.name }}">{% endfor %}
         </datalist>
       </label>
+      <label>Categorias (separadas por vírgula)<input name="categorias" placeholder="mercado, lazer"></label>
       <label class="check"><input type="checkbox" name="variable"> Valor variável (ex.: luz)</label>
       <button type="submit" class="primary">Adicionar</button>
     </form>

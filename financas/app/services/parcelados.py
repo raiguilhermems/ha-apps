@@ -4,8 +4,9 @@ from datetime import date
 
 from sqlmodel import Session, select
 
-from app.models import InstallmentPlan, Transaction
+from app.models import Account, InstallmentPlan, Transaction
 from app.services.recurring import get_or_create_card
+from app.services.tags import parse_tags, set_tags
 from app.services.util import add_months, current_month, due_in_month
 
 FORMAS = {
@@ -33,6 +34,7 @@ def create_plan(
     current_n: int,
     current_ref: str,
     due_day: int,
+    categorias: str = "",
 ) -> InstallmentPlan:
     account_id = None
     if payment_method == "cartao":
@@ -45,6 +47,7 @@ def create_plan(
         installments_total=total,
         first_due_month=add_months(current_ref, -(current_n - 1)),
         due_day=due_day,
+        tags_text=", ".join(parse_tags(categorias)),
     )
     session.add(plan)
     session.flush()
@@ -71,18 +74,19 @@ def generate_installments(session: Session, months_ahead: int = 12) -> int:
                     )
                 ).first()
                 if not exists:
-                    session.add(
-                        Transaction(
-                            description=f"{plan.description} ({n}/{plan.installments_total})",
-                            amount_cents=plan.installment_cents,
-                            due_date=due_in_month(m, plan.due_day),
-                            kind="despesa",
-                            account_id=plan.account_id,
-                            installment_plan_id=plan.id,
-                            installment_n=n,
-                            status="pendente",
-                        )
+                    tx = Transaction(
+                        description=f"{plan.description} ({n}/{plan.installments_total})",
+                        amount_cents=plan.installment_cents,
+                        due_date=due_in_month(m, plan.due_day),
+                        kind="despesa",
+                        account_id=plan.account_id,
+                        installment_plan_id=plan.id,
+                        installment_n=n,
+                        status="pendente",
                     )
+                    session.add(tx)
+                    session.flush()
+                    set_tags(session, tx, parse_tags(plan.tags_text))
                     created += 1
             m = add_months(m, 1)
         plan.generated_until = target_end
@@ -121,9 +125,9 @@ def schedule_summaries(session: Session) -> dict:
                 else:
                     status = "pendente"
             elif m < base:
-                status = "passada"  # anterior ao cadastro: considerada paga
+                status = "passada"
             else:
-                status = "pendente"  # ainda não gerada (além de 12 meses)
+                status = "pendente"
 
             if status in ("pago", "passada"):
                 pagas += 1
@@ -146,7 +150,6 @@ def schedule_summaries(session: Session) -> dict:
 
         cartao_nome = ""
         if p.account_id:
-            from app.models import Account
             acc = session.get(Account, p.account_id)
             cartao_nome = acc.name if acc else ""
 

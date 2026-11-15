@@ -50,6 +50,7 @@
           {% for d in range(1, 32) %}<option value="{{ d }}" {{ 'selected' if d == dia_padrao }}>Dia {{ d }}</option>{% endfor %}
         </select>
       </label>
+      <label>Categorias (separadas por vírgula)<input name="categorias" placeholder="mercado, lazer"></label>
       <button type="submit" class="primary">Cadastrar</button>
     </form>
     <p class="aviso">Parcelas de cartão ficam só nesta tela, porque já estão na fatura. Marque cada uma como paga quando a fatura for paga. As demais entram no Início automaticamente, no mês de cada parcela.</p>

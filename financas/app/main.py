@@ -244,6 +244,7 @@ def create_installment(
     current_n: int = Form(...),
     current_ref: str = Form(...),
     due_day: int = Form(...),
+    categorias: str = Form(""),
     session: Session = Depends(get_session),
 ):
     if payment_method not in ("cartao", "boleto", "carne", "financiamento", "outro"):
@@ -269,6 +270,7 @@ def create_installment(
         current_n,
         current_ref,
         due_day,
+        categorias,
     )
     session.commit()
     generate_installments(session)
@@ -432,11 +434,12 @@ def create_recurring(
     kind: str = Form("despesa"),
     card_name: str = Form(""),
     variable: bool = Form(False),
+    categorias: str = Form(""),
     session: Session = Depends(get_session),
 ):
     if not 0 <= day <= 31:
         raise HTTPException(status_code=400, detail="Dia do mês deve estar entre 1 e 31")
-    create_rule(session, description, parse_brl(amount), day, kind, card_name, variable)
+    create_rule(session, description, parse_brl(amount), day, kind, card_name, variable, categorias)
     session.commit()
     generate_all(session)
     return RedirectResponse("/recorrentes", status_code=303)
@@ -452,7 +455,7 @@ def edit_recurring_page(rule_id: int, request: Request, session: Session = Depen
     return templates.TemplateResponse(
         request,
         "editar_recorrente.html",
-        {"rule": rule, "card_name": card.name if card else "", "cards": cards},
+        {"rule": rule, "card_name": card.name if card else "", "cards": cards, "categorias": rule.tags_text},
     )
 
 
@@ -465,6 +468,7 @@ def edit_recurring(
     kind: str = Form("despesa"),
     card_name: str = Form(""),
     variable: bool = Form(False),
+    categorias: str = Form(""),
     session: Session = Depends(get_session),
 ):
     rule = session.get(RecurringRule, rule_id)
@@ -472,7 +476,7 @@ def edit_recurring(
         raise HTTPException(status_code=404, detail="Recorrência não encontrada")
     if not 0 <= day <= 31:
         raise HTTPException(status_code=400, detail="Dia do mês deve estar entre 1 e 31")
-    update_rule(session, rule, description, parse_brl(amount), day, kind, card_name, variable)
+    update_rule(session, rule, description, parse_brl(amount), day, kind, card_name, variable, categorias)
     session.commit()
     return RedirectResponse("/recorrentes", status_code=303)
 

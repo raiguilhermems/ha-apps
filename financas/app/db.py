@@ -22,6 +22,8 @@ NEW_COLUMNS = [
     ("transacao", "amount_manual", "BOOLEAN NOT NULL DEFAULT 0"),
     ("installment_plan", "due_day", "INTEGER NOT NULL DEFAULT 10"),
     ("installment_plan", "generated_until", "VARCHAR"),
+    ("recurring_rule", "tags_text", "VARCHAR NOT NULL DEFAULT ''"),
+    ("installment_plan", "tags_text", "VARCHAR NOT NULL DEFAULT ''"),
 ]
 
 

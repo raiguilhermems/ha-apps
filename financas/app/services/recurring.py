@@ -5,6 +5,7 @@ from datetime import date
 from sqlmodel import Session, select
 
 from app.models import Account, RecurringRule, Transaction, TransactionTag
+from app.services.tags import parse_tags, set_tags
 from app.services.util import add_months, current_month, due_in_month, month_bounds
 
 
@@ -35,6 +36,7 @@ def create_rule(
     kind: str,
     card_name: str,
     variable: bool = False,
+    categorias: str = "",
 ) -> RecurringRule:
     rule = RecurringRule(
         description=description.strip(),
@@ -44,6 +46,7 @@ def create_rule(
         account_id=_account_for(session, kind, card_name),
         active=True,
         variable=variable,
+        tags_text=", ".join(parse_tags(categorias)),
     )
     session.add(rule)
     session.flush()
@@ -71,19 +74,20 @@ def generate_all(session: Session, months_ahead: int = 12) -> int:
                 )
             ).first()
             if not exists:
-                session.add(
-                    Transaction(
-                        description=rule.description,
-                        amount_cents=rule.expected_cents,
-                        due_date=due_in_month(m, rule.day_of_month),
-                        kind=rule.kind,
-                        account_id=rule.account_id,
-                        is_recurring=True,
-                        recurring_rule_id=rule.id,
-                        status="pendente",
-                        amount_manual=False,
-                    )
+                tx = Transaction(
+                    description=rule.description,
+                    amount_cents=rule.expected_cents,
+                    due_date=due_in_month(m, rule.day_of_month),
+                    kind=rule.kind,
+                    account_id=rule.account_id,
+                    is_recurring=True,
+                    recurring_rule_id=rule.id,
+                    status="pendente",
+                    amount_manual=False,
                 )
+                session.add(tx)
+                session.flush()
+                set_tags(session, tx, parse_tags(rule.tags_text))
                 created += 1
             m = add_months(m, 1)
         rule.generated_until = target_end
@@ -159,12 +163,11 @@ def rule_month_status(session: Session, ref: str) -> list[dict]:
             status, real, divergente = "não lançado", None, False
         else:
             real = t.amount_cents
-            # Regra variável não tem alerta de divergência
             divergente = (not r.variable) and t.amount_cents != r.expected_cents
             if t.status == "pago":
                 status = "recebido" if r.kind == "receita" else "pago"
             elif r.kind == "receita":
-                status = "a receber"  # receita nunca fica "atrasada"
+                status = "a receber"
             elif t.due_date < today:
                 status = "atrasado"
             else:

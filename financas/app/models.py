@@ -42,6 +42,7 @@ class RecurringRule(SQLModel, table=True):
     active: bool = True
     generated_until: Optional[str] = None  # AAAA-MM, último mês já gerado
     variable: bool = False  # valor variável (estimativa)
+    tags_text: str = ""
 
 class InstallmentPlan(SQLModel, table=True):
     __tablename__ = "installment_plan"
@@ -54,6 +55,7 @@ class InstallmentPlan(SQLModel, table=True):
     installments_total: int
     first_due_month: str  # AAAA-MM
     due_day: int = 10
+    tags_text: str = ""
     generated_until: Optional[str] = None  # AAAA-MM, último mês já gerado
 
 

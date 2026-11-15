@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 from app.models import RecurringRule, Tag, Transaction, TransactionTag
 from app.services.debts import mark_third_party
 from app.services.recurring import _account_for
+from app.services.tags import parse_tags, set_tags
 from app.services.util import current_month, due_in_month, month_bounds
 
 
@@ -59,6 +60,7 @@ def update_rule(
     kind: str,
     card_name: str,
     variable: bool = False,
+    categorias: str = "",
 ) -> None:
     rule.description = description.strip()
     rule.expected_cents = expected_cents
@@ -66,6 +68,7 @@ def update_rule(
     rule.kind = kind
     rule.variable = variable
     rule.account_id = _account_for(session, kind, card_name)
+    rule.tags_text = ", ".join(parse_tags(categorias))
     session.add(rule)
     session.flush()
 
@@ -89,3 +92,5 @@ def update_rule(
         if not t.amount_manual:
             t.amount_cents = rule.expected_cents
         session.add(t)
+        session.flush()
+        set_tags(session, t, parse_tags(rule.tags_text))

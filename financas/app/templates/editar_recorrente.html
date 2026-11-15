@@ -32,6 +32,7 @@
           {% for c in cards %}<option value="{{ c.name }}">{% endfor %}
         </datalist>
       </label>
+      <label>Categorias (separadas por vírgula)<input name="categorias" value="{{ categorias }}" placeholder="mercado, lazer"></label>
       <label class="check"><input type="checkbox" name="variable" {{ 'checked' if rule.variable }}> Valor variável (ex.: luz)</label>
       <button type="submit" class="primary">Salvar</button>
     </form>
