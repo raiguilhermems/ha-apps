@@ -14,7 +14,7 @@ from app.services.recurring import generate_all
 from app.services.parcelados import generate_installments
 from app.services.settings import get_setting
 from app.services.summary import card_account_ids, monthly_summary, overdue_items
-from app.services.tags import parse_tags, set_tags, tag_text, tags_by_tx
+from app.services.tags import parse_tags, set_tags, tag_text, tags_by_tx, tags_com_id_by_tx
 from app.services.util import add_months, current_month, month_bounds, parse_brl
 from app.web import RedirectResponse, templates
 
@@ -59,6 +59,9 @@ def home(request: Request, mes: str | None = None, session: Session = Depends(ge
         .order_by(Transaction.due_date)
     ).all()
     txs = [t for t in txs if t.account_id not in cards]
+    txs.sort(key=lambda t: {"receita": 0, "despesa": 1}.get(t.kind, 2))
+    txs.sort(key=lambda t: {"receita": 0, "despesa": 1}.get(t.kind, 2))
+    txs.sort(key=lambda t: {"receita": 0, "despesa": 1}.get(t.kind, 2))
     horizonte = int(get_setting(session, "projecao_meses"))
 
     return templates.TemplateResponse(
@@ -71,7 +74,7 @@ def home(request: Request, mes: str | None = None, session: Session = Depends(ge
             "today": date.today(),
             "s": monthly_summary(session, ref),
             "txs": txs,
-            "tag_map": tags_by_tx(session, [t.id for t in txs]),
+            "tag_map": tags_com_id_by_tx(session, [t.id for t in txs]),
             "atrasados": overdue_items(session),
             "proj": projection(session, ref, horizonte),
             "horizonte": horizonte,

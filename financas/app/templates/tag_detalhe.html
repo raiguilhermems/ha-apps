@@ -14,6 +14,11 @@
     {% if tag.excludes_from_total %}<span class="pill">não soma no total</span>{% endif %}
   </h1>
 
+  <h2>Evolução da categoria</h2>
+  <div class="panel">
+    <div style="position:relative;height:240px"><canvas id="chartCategoria"></canvas></div>
+  </div>
+
   <div class="monthbar">
     <a href="{{ base() }}/categorias/{{ tag.id }}?mes={{ prev }}">‹ {{ prev | mes }}</a>
     <strong>{{ ref | mes }}</strong>
@@ -21,7 +26,7 @@
   </div>
 
   <section class="cards">
-    <div class="card"><small>Despesas da categoria</small><div class="val">{{ despesas | brl }}</div></div>
+    <div class="card"><small>Despesas da categoria</small><div class="val" style="color:#f87171">{{ despesas | brl }}</div></div>
     <div class="card"><small>Receitas da categoria</small><div class="val pago">{{ receitas | brl }}</div></div>
   </section>
 
@@ -36,7 +41,7 @@
       <td>{{ r.tx.description }}</td>
       <td class="muted">{{ r.conta }}</td>
       <td class="muted">{{ 'Despesa' if r.tx.kind == 'despesa' else 'Receita' }}</td>
-      <td>{{ r.tx.amount_cents | brl }}</td>
+      <td style="color: {{ '#34d399' if r.tx.kind == 'receita' else '#f87171' }}">{{ r.tx.amount_cents | brl }}</td>
       <td>
         {% if r.tx.status == 'pago' %}<span class="pill ok">Pago</span>
         {% else %}<span class="pill">Pendente</span>{% endif %}
@@ -49,5 +54,28 @@
   <p class="muted">Nenhum lançamento com esta categoria neste mês.</p>
   {% endif %}
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+Chart.defaults.color = '#9aa3b2';
+Chart.defaults.borderColor = '#2a2f3a';
+const reais = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const G = {{ grafico | tojson }};
+new Chart(document.getElementById('chartCategoria'), {
+  type: 'bar',
+  data: {
+    labels: G.labels,
+    datasets: [
+      { label: 'Receitas', data: G.receitas, backgroundColor: '#34d399' },
+      { label: 'Despesas', data: G.despesas, backgroundColor: '#f87171' }
+    ]
+  },
+  options: {
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true, ticks: { callback: v => reais(v) } } },
+    plugins: { tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + reais(c.parsed.y) } } }
+  }
+});
+</script>
 </body>
 </html>

@@ -87,3 +87,19 @@ def mark_third_party(session: Session, tx: Transaction) -> None:
         session.add(tag)
         session.flush()
     session.add(TransactionTag(transaction_id=tx.id, tag_id=tag.id))
+
+
+def tags_com_id_by_tx(session: Session, tx_ids: list[int]) -> dict[int, list[dict]]:
+    """Como tags_by_tx, mas cada categoria vem como {"id": ..., "name": ...} (para os links)."""
+    if not tx_ids:
+        return {}
+    rows = session.exec(
+        select(TransactionTag.transaction_id, Tag.id, Tag.name).where(
+            Tag.id == TransactionTag.tag_id,
+            TransactionTag.transaction_id.in_(tx_ids),
+        )
+    ).all()
+    out: dict[int, list[dict]] = {}
+    for tid, tag_id, name in rows:
+        out.setdefault(tid, []).append({"id": tag_id, "name": name})
+    return out

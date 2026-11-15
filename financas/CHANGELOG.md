@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.13
+
+- Início: lançamentos separados em receitas e despesas, com cabeçalho e total de cada grupo. Receitas em verde e despesas em vermelho.
+- Início: as categorias de cada lançamento são links para a tela da categoria.
+- Categorias: gráfico mensal de receitas e despesas da categoria, que acompanha o mês selecionado.
+- Categorias: despesas em vermelho, no card e na tabela de lançamentos.
+- Novo teste para o gráfico mensal da categoria.
+
 ## 0.0.12
 
 - Removido o código de faturas que não era mais usado (modelos `Invoice` e `Valuation` e campos `invoice_id`, `purchase_date` e `is_recurring`).

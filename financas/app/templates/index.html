@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Finanças — {{ ref | mes }}</title>
   {% include "_style.html" %}
+  <style>
+    tr.linha-receita td:first-child { box-shadow: inset 4px 0 0 #34d399; }
+    tr.linha-despesa td:first-child { box-shadow: inset 4px 0 0 #f87171; }
+    tr.linha-receita td.valor { color: #34d399; }
+    tr.linha-despesa td.valor { color: #f87171; }
+    tr.grupo td { background: rgba(255,255,255,.04); font-weight: 600; }
+  </style>
 </head>
 <body>
 {% include "_nav.html" %}
@@ -64,8 +71,13 @@
       <thead><tr><th>Venc.</th><th>Descrição</th><th>Categorias</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
       <tbody>
       {% for t in txs %}
+      {% if loop.changed(t.kind) and t.kind in ['receita', 'despesa'] %}
+      <tr class="grupo">
+        <td colspan="6">{{ 'Receitas' if t.kind == 'receita' else 'Despesas' }} · {{ (s.receitas_total if t.kind == 'receita' else s.despesas_total) | brl }}</td>
+      </tr>
+      {% endif %}
       {% set atrasada = t.kind == 'despesa' and t.status == 'pendente' and t.due_date < today %}
-      <tr>
+      <tr{% if t.kind in ['receita', 'despesa'] %} class="linha-{{ t.kind }}"{% endif %}>
         <td>{{ t.due_date.strftime('%d/%m') }}</td>
         <td>
           {{ t.description }}
@@ -73,9 +85,9 @@
           {% if t.third_party_cents %}<span class="pill">terceiros {{ t.third_party_cents | brl }}</span>{% endif %}
         </td>
         <td>
-          {% for tg in tag_map.get(t.id, []) %}<span class="pill">{{ tg.name if tg.name is defined else tg }}</span> {% endfor %}
+          {% for tg in tag_map.get(t.id, []) %}{% if tg.id is defined %}<a class="pill" href="{{ base() }}/categorias/{{ tg.id }}">{{ tg.name }}</a>{% else %}<span class="pill">{{ tg }}</span>{% endif %} {% endfor %}
         </td>
-        <td>{{ t.amount_cents | brl }}</td>
+        <td class="valor">{{ t.amount_cents | brl }}</td>
         <td>
           {% if t.status == 'pago' %}
             <span class="pill ok">{{ 'recebido' if t.kind == 'receita' else 'pago' }}</span>
