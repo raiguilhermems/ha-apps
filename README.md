@@ -5,13 +5,19 @@ Controle financeiro pessoal, autohospedado, rodando como add-on do Home Assistan
 ## Telas
 
 ![Início](docs/inicio.png)
+
 ![Início, outra visão](docs/inicio1.png)
+
 ![Parcelados](docs/parcelados.png)
+
 ![Parcelados, outra visão](docs/parcelados1.png)
+
 ![Recorrentes](docs/recorrentes.png)
-![Recorrentes, outra visão](docs/recorrentes1.png)
+
 ![Categorias](docs/categorias.png)
+
 ![Configurações](docs/configuracoes.png)
+
 
 ## O que faz
 
