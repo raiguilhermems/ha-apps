@@ -5,8 +5,12 @@ Controle financeiro pessoal, autohospedado, rodando como add-on do Home Assistan
 ## Telas
 
 ![Início](docs/inicio.png)
+![Início, outra visão](docs/inicio1.png)
 ![Parcelados](docs/parcelados.png)
+![Parcelados, outra visão](docs/parcelados1.png)
 ![Recorrentes](docs/recorrentes.png)
+![Recorrentes, outra visão](docs/recorrentes1.png)
+![Categorias](docs/categorias.png)
 ![Configurações](docs/configuracoes.png)
 
 ## O que faz
@@ -50,6 +54,11 @@ Requisitos: uv e Python 3.15 (ou outra versão compatível com as dependências)
 
 Abra http://127.0.0.1:8000 no navegador. O banco de teste fica em finance-dev.db, separado de qualquer banco real.
 
+Para gerar um banco de demonstração com dados fictícios:
+
+    cd financas
+    PYTHONPATH=. FINANCAS_DB=./demo.db uv run python scripts/seed_demo.py
+
 Para rodar os testes automatizados:
 
     cd financas
@@ -72,5 +81,6 @@ O banco SQLite fica em /data/finance.db dentro do add-on e não é versionado. A
 - financas/app/routers/: rotas de cada tela (lançamentos, parcelados, categorias, recorrentes e configurações).
 - financas/app/services/: regras de negócio (recorrentes, parcelados, projeção, resumo, gráficos, categorias e configurações).
 - financas/app/templates/: telas em Jinja2.
+- financas/scripts/: utilitários de desenvolvimento, como o gerador de dados de demonstração.
 - financas/tests/: testes automatizados.
 - financas/CHANGELOG.md: histórico de versões.
