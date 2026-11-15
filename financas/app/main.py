@@ -217,7 +217,7 @@ def delete_transaction(tx_id: int, mes: str = Form(...), session: Session = Depe
 # ---------- Parcelados ----------
 
 @app.get("/parcelados")
-def parcelados_page(request: Request, session: Session = Depends(get_session)):
+def parcelados_page(request: Request, erro: str | None = None, session: Session = Depends(get_session)):
     data = schedule_summaries(session)
     cards = session.exec(select(Account).where(Account.type == "cartao")).all()
     return templates.TemplateResponse(
@@ -228,6 +228,7 @@ def parcelados_page(request: Request, session: Session = Depends(get_session)):
             "saldo_total": data["saldo_total"],
             "cards": cards,
             "ref": current_month(),
+            "erro": erro,
             "dia_padrao": int(get_setting(session, "dia_padrao")),
             "graficos": parcelas_mensal(session),
         },
@@ -248,17 +249,17 @@ def create_installment(
     session: Session = Depends(get_session),
 ):
     if payment_method not in ("cartao", "boleto", "carne", "financiamento", "outro"):
-        raise HTTPException(status_code=400, detail="Forma de pagamento inválida")
+        return RedirectResponse("/parcelados?erro=forma", status_code=303)
     if payment_method == "cartao" and not card_name.strip():
-        raise HTTPException(status_code=400, detail="Informe o cartão")
+        return RedirectResponse("/parcelados?erro=cartao", status_code=303)
     if total < 1 or not 1 <= current_n <= total:
-        raise HTTPException(status_code=400, detail="Parcela atual deve estar entre 1 e o total de parcelas")
+        return RedirectResponse("/parcelados?erro=parcela", status_code=303)
     if not 0 <= due_day <= 31:
-        raise HTTPException(status_code=400, detail="Dia do vencimento deve estar entre 1 e 31")
+        return RedirectResponse("/parcelados?erro=dia", status_code=303)
     try:
         int(current_ref[:4]); int(current_ref[5:7])
     except ValueError:
-        raise HTTPException(status_code=400, detail="Mês da parcela inválido")
+        return RedirectResponse("/parcelados?erro=mes", status_code=303)
 
     create_plan(
         session,

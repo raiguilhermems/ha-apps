@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.8
+- Recorrentes e parcelados aceitam categorias. Os lançamentos gerados já saem com elas.
+- Editar uma recorrência atualiza as categorias dos lançamentos pendentes.
+- Cadastro de parcelado com erro (por exemplo, cartão sem nome) mostra um aviso na tela, em vez de texto cru.
+
 ## 0.0.7
 - Categorias: botão Editar em vez de salvar direto na lista, e página de edição própria.
 - Configurações: vencimento padrão, com opção de 1º dia útil (segunda a sexta, sem feriados).

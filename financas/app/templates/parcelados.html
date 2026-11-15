@@ -10,6 +10,15 @@
 {% include "_nav.html" %}
 <div class="wrap">
   <h1>Parcelados</h1>
+  {% if erro %}
+  <div class="panel" style="border-color: var(--bad);">
+    {{ {'cartao': 'Informe o nome do cartão para parcelas de cartão. Nada foi cadastrado.',
+        'forma': 'Escolha uma forma de pagamento válida. Nada foi cadastrado.',
+        'parcela': 'A parcela atual precisa estar entre 1 e o total de parcelas. Nada foi cadastrado.',
+        'dia': 'Dia do vencimento inválido. Nada foi cadastrado.',
+        'mes': 'Mês da parcela atual inválido. Nada foi cadastrado.'}.get(erro, 'Não foi possível cadastrar.') }}
+  </div>
+  {% endif %}
 
   <section class="cards">
     <div class="card"><small>Saldo devedor total</small><div class="val bad">{{ saldo_total | brl }}</div></div>
