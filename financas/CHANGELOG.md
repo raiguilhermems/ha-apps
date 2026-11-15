@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.11
+
+- Código reorganizado em módulos por tela (`app/routers/`). Nenhuma tela ou URL mudou.
+- Removido código legado de faturas e dívidas que não era mais usado.
+- Adicionados testes automatizados (pytest) para cálculos, recorrentes, parcelados e rotas.
+
 ## 0.0.10
 - Categorias aparecem como caixinhas clicáveis em Recorrentes e Parcelados, e abrem o detalhamento da categoria.
 - Cartão aparece como caixinha na lista de recorrentes, no mesmo estilo do valor das parcelas.
