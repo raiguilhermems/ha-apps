@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.12
+
+- Removido o código de faturas que não era mais usado (modelos `Invoice` e `Valuation` e campos `invoice_id`, `purchase_date` e `is_recurring`).
+- A projeção passa a identificar recorrentes pela regra de origem, sem mudar os valores exibidos.
+- Mensagens de erro de categorias usam o nome "categoria".
+- Novo teste para garantir que recorrentes entram na projeção como compromisso.
+- **Atenção:** esta versão muda a estrutura do banco. Em instalações com dados, é preciso recriar o banco (desinstalar e instalar de novo o app, após baixar o backup).
+
 ## 0.0.11
 
 - Código reorganizado em módulos por tela (`app/routers/`). Nenhuma tela ou URL mudou.

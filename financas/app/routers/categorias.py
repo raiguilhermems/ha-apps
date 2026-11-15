@@ -31,7 +31,7 @@ def create_tag(
 ):
     names = parse_tags(name)
     if not names:
-        raise HTTPException(status_code=400, detail="Informe um nome para a tag")
+        raise HTTPException(status_code=400, detail="Informe um nome para a categoria")
     tag = get_or_create_tag(session, names[0])
     tag.excludes_from_total = excludes
     session.add(tag)
@@ -48,13 +48,13 @@ def update_tag(
 ):
     tag = session.get(Tag, tag_id)
     if tag is None:
-        raise HTTPException(status_code=404, detail="Tag não encontrada")
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
     names = parse_tags(name)
     if not names:
-        raise HTTPException(status_code=400, detail="Informe um nome para a tag")
+        raise HTTPException(status_code=400, detail="Informe um nome para a categoria")
     clash = session.exec(select(Tag).where(Tag.name == names[0], Tag.id != tag.id)).first()
     if clash:
-        raise HTTPException(status_code=400, detail="Já existe uma tag com esse nome")
+        raise HTTPException(status_code=400, detail="Já existe uma categoria com esse nome")
     tag.name = names[0]
     tag.excludes_from_total = excludes
     session.add(tag)
@@ -66,7 +66,7 @@ def update_tag(
 def delete_tag(tag_id: int, session: Session = Depends(get_session)):
     tag = session.get(Tag, tag_id)
     if tag is None:
-        raise HTTPException(status_code=404, detail="Tag não encontrada")
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
     for link in session.exec(select(TransactionTag).where(TransactionTag.tag_id == tag.id)).all():
         session.delete(link)
     session.delete(tag)
@@ -78,7 +78,7 @@ def delete_tag(tag_id: int, session: Session = Depends(get_session)):
 def tag_report(tag_id: int, request: Request, mes: str | None = None, session: Session = Depends(get_session)):
     tag = session.get(Tag, tag_id)
     if tag is None:
-        raise HTTPException(status_code=404, detail="Tag não encontrada")
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
     ref = mes or current_month()
     start, end = month_bounds(ref)
     rows = []

@@ -23,7 +23,7 @@ def variable_average(session: Session, ref: str, months: int = 3) -> int:
                 Transaction.kind == "despesa",
                 Transaction.due_date >= start,
                 Transaction.due_date < end,
-                Transaction.is_recurring.is_(False),
+                Transaction.recurring_rule_id.is_(None),
                 Transaction.installment_plan_id.is_(None),
             )
         ).all()
@@ -48,7 +48,7 @@ def projection(session: Session, ref: str, months: int = 12) -> list[dict]:
                 Transaction.due_date >= start,
                 Transaction.due_date < end,
                 or_(
-                    Transaction.is_recurring.is_(True),
+                    Transaction.recurring_rule_id.is_not(None),
                     Transaction.installment_plan_id.is_not(None),
                 ),
             )

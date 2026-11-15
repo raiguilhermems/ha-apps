@@ -80,7 +80,6 @@ def generate_all(session: Session, months_ahead: int = 12) -> int:
                     due_date=due_in_month(m, rule.day_of_month),
                     kind=rule.kind,
                     account_id=rule.account_id,
-                    is_recurring=True,
                     recurring_rule_id=rule.id,
                     status="pendente",
                     amount_manual=False,
@@ -112,7 +111,6 @@ def remove_future_pending(session: Session, rule: RecurringRule) -> None:
         select(Transaction).where(
             Transaction.recurring_rule_id == rule.id,
             Transaction.status == "pendente",
-            Transaction.invoice_id.is_(None),
             Transaction.due_date >= start,
         )
     ).all():

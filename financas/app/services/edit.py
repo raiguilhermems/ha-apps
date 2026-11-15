@@ -77,7 +77,6 @@ def update_rule(
         select(Transaction).where(
             Transaction.recurring_rule_id == rule.id,
             Transaction.status == "pendente",
-            Transaction.invoice_id.is_(None),
             Transaction.due_date >= start,
         )
     ).all()

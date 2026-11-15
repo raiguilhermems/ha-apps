@@ -96,7 +96,6 @@ def create_transaction(
         amount_cents=amount_cents,
         due_date=due_date,
         kind=kind,
-        is_recurring=False,
         status="pendente",
         third_party_cents=_parse_third(third_party, amount_cents, kind),
     )
