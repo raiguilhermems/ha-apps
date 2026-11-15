@@ -12,19 +12,23 @@ Controle financeiro pessoal, autohospedado, rodando como add-on do Home Assistan
 ## O que faz
 
 - Lançamentos de receitas e despesas por mês, pela data de vencimento (regime de caixa).
+- Saldo do mês em verde quando positivo e em vermelho quando negativo.
 - Despesas com valor de terceiros: a parte que não é sua sai do total.
 - Recorrentes: regras mensais que geram lançamentos nos próximos 12 meses. Podem ter valor fixo ou variável (estimativa, ajustada mês a mês).
+- Vencimento padrão configurável, com a opção de 1º dia útil (segunda a sexta, sem feriados).
 - Parcelados: boleto, carnê, financiamento ou cartão. Parcelas de cartão ficam só na aba Parcelados.
-- Categorias, com filtro por mês. A tag "terceiro" não entra no total.
+- Categorias, com filtro por mês. A categoria "terceiro" não entra no total.
 - Projeção dos próximos meses: compromissos cadastrados mais a média dos gastos avulsos.
 - Gráficos de receitas × despesas por mês e de parcelas por mês.
-- Configurações: horizonte da projeção, backup, importação e apagar dados.
+- Configurações: vencimento padrão, horizonte da projeção, backup, importação e apagar dados.
 
 ## Últimas versões
 
-- **0.0.3**: nova aba Configurações, com projeção de 1 a 12 meses, backup (baixar e importar) e apagar dados com confirmação.
-- **0.0.2**: layout adaptado para celular.
-- **0.0.1**: primeira versão no Home Assistant.
+- **0.0.7**: categorias com botão Editar, vencimento padrão com 1º dia útil, saldo colorido e ajustes de alinhamento nas telas.
+- **0.0.6**: ajuste visual para celular: campos de data, botões das tabelas e valores em R$ sem quebrar a linha.
+- **0.0.5**: revisão dos textos das telas de categorias.
+- **0.0.4**: tags renomeadas para categorias, com o endereço /categorias.
+- **0.0.3**: nova aba de Configurações, com projeção, backup, importação e apagar dados.
 
 Histórico completo em [CHANGELOG completo](financas/CHANGELOG.md).
 
@@ -54,6 +58,6 @@ O banco SQLite fica em /data/finance.db dentro do add-on e não é versionado. A
 - financas/config.yaml: configuração do add-on (versão, ingress, ícone).
 - financas/Dockerfile: imagem do add-on.
 - financas/app/main.py: rotas da aplicação.
-- financas/app/services/: regras de negócio (recorrentes, parcelados, projeção, resumo e gráficos).
+- financas/app/services/: regras de negócio (recorrentes, parcelados, projeção, resumo, gráficos e configurações).
 - financas/app/templates/: telas em Jinja2.
 - financas/CHANGELOG.md: histórico de versões.
