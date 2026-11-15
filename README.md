@@ -8,14 +8,18 @@ Controle financeiro pessoal, autohospedado, rodando como add-on do Home Assistan
 
 ![Início, outra visão](docs/inicio1.png)
 
+---
 ![Parcelados](docs/parcelados.png)
 
 ![Parcelados, outra visão](docs/parcelados1.png)
 
+---
 ![Recorrentes](docs/recorrentes.png)
 
+---
 ![Categorias](docs/categorias.png)
 
+---
 ![Configurações](docs/configuracoes.png)
 
 
