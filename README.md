@@ -12,23 +12,24 @@ Controle financeiro pessoal, autohospedado, rodando como add-on do Home Assistan
 ## O que faz
 
 - Lançamentos de receitas e despesas por mês, pela data de vencimento (regime de caixa).
+- No mês, receitas aparecem primeiro, depois despesas, cada grupo com o seu total. Receitas em verde e despesas em vermelho.
 - Saldo do mês em verde quando positivo e em vermelho quando negativo.
 - Despesas com valor de terceiros: a parte que não é sua sai do total.
 - Recorrentes: regras mensais que geram lançamentos nos próximos 12 meses. Podem ter valor fixo ou variável (estimativa, ajustada mês a mês) e categorias.
 - Vencimento padrão configurável, com a opção de 1º dia útil (segunda a sexta, sem feriados).
 - Parcelados: boleto, carnê, financiamento ou cartão, com categorias. Parcelas de cartão ficam só na aba Parcelados.
-- Categorias, com filtro por mês. A categoria "terceiro" não entra no total.
+- Categorias, com filtro por mês, gráfico mensal de receitas e despesas e links a partir de cada lançamento. A categoria "terceiro" não entra no total.
 - Projeção dos próximos meses: compromissos cadastrados mais a média dos gastos avulsos.
 - Gráficos de receitas × despesas por mês e de parcelas por mês.
 - Configurações: vencimento padrão, horizonte da projeção, backup, importação e apagar dados.
 
 ## Últimas versões
 
-- **0.0.8**: categorias em recorrentes e parcelados, e aviso claro no cadastro de parcelados com erro.
-- **0.0.7**: categorias com botão Editar, vencimento padrão com 1º dia útil, saldo colorido e ajustes de alinhamento.
-- **0.0.6**: ajuste visual para celular: campos de data, botões das tabelas e valores em R$ sem quebrar a linha.
-- **0.0.5**: revisão dos textos das telas de categorias.
-- **0.0.4**: tags renomeadas para categorias, com o endereço /categorias.
+- **0.0.13**: início com receitas e despesas separadas e cores por tipo; categorias clicáveis no início; gráfico mensal por categoria.
+- **0.0.12**: remoção do código legado de faturas e textos de categorias.
+- **0.0.11**: código do app dividido em módulos por tela e testes automatizados.
+- **0.0.10**: categorias e cartões em caixinhas clicáveis.
+- **0.0.9**: edição de parcelamentos.
 
 Histórico completo em [CHANGELOG completo](financas/CHANGELOG.md).
 
@@ -49,6 +50,14 @@ Requisitos: uv e Python 3.15 (ou outra versão compatível com as dependências)
 
 Abra http://127.0.0.1:8000 no navegador. O banco de teste fica em finance-dev.db, separado de qualquer banco real.
 
+Para rodar os testes automatizados:
+
+    cd financas
+    uv pip install -r requirements-dev.txt
+    uv run pytest -v
+
+Os testes usam um banco temporário e nunca tocam no banco de desenvolvimento.
+
 ## Dados
 
 O banco SQLite fica em /data/finance.db dentro do add-on e não é versionado. Antes de atualizar ou apagar qualquer coisa, baixe um backup pela aba Configurações.
@@ -58,7 +67,10 @@ O banco SQLite fica em /data/finance.db dentro do add-on e não é versionado. A
 - financas/config.yaml: configuração do add-on (versão, ingress, ícone).
 - financas/Dockerfile: imagem do add-on.
 - financas/DOCS.md: guia de uso mostrado dentro do Home Assistant.
-- financas/app/main.py: rotas da aplicação.
+- financas/app/main.py: cria o app e inclui as telas.
+- financas/app/web.py: templates, filtros, prefixo do ingress e redirecionamento.
+- financas/app/routers/: rotas de cada tela (lançamentos, parcelados, categorias, recorrentes e configurações).
 - financas/app/services/: regras de negócio (recorrentes, parcelados, projeção, resumo, gráficos, categorias e configurações).
 - financas/app/templates/: telas em Jinja2.
+- financas/tests/: testes automatizados.
 - financas/CHANGELOG.md: histórico de versões.
