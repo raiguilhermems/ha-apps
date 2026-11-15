@@ -14,7 +14,12 @@
     <form class="grid" method="post" action="{{ base() }}/recorrentes/{{ rule.id }}/editar">
       <label>Descrição<input name="description" value="{{ rule.description }}" required></label>
       <label>Valor (R$)<input name="amount" value="{{ '%.2f'|format(rule.expected_cents / 100) | replace('.', ',') }}" required></label>
-      <label>Dia do mês<input type="number" name="day" min="1" max="31" value="{{ rule.day_of_month }}" required></label>
+      <label>Vencimento
+        <select name="day">
+          <option value="0" {{ 'selected' if rule.day_of_month == 0 }}>1º dia útil</option>
+          {% for d in range(1, 32) %}<option value="{{ d }}" {{ 'selected' if d == rule.day_of_month }}>Dia {{ d }}</option>{% endfor %}
+        </select>
+      </label>
       <label>Tipo
         <select name="kind" onchange="toggleCartao(this)">
           <option value="despesa" {{ 'selected' if rule.kind == 'despesa' }}>Despesa</option>

@@ -17,7 +17,12 @@
     <form class="grid" method="post" action="{{ base() }}/recorrentes">
       <label>Descrição<input name="description" required></label>
       <label>Valor (R$)<input name="amount" placeholder="1.234,56" required></label>
-      <label>Dia do mês<input type="number" name="day" min="1" max="31" value="10" required></label>
+      <label>Vencimento
+        <select name="day">
+          <option value="0" {{ 'selected' if dia_padrao == 0 }}>1º dia útil</option>
+          {% for d in range(1, 32) %}<option value="{{ d }}" {{ 'selected' if d == dia_padrao }}>Dia {{ d }}</option>{% endfor %}
+        </select>
+      </label>
       <label>Tipo
         <select name="kind" onchange="toggleCartao(this)">
           <option value="despesa">Despesa</option>
@@ -73,7 +78,7 @@
   <h2>Regras</h2>
   {% if rows %}
   <table>
-    <thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Dia</th><th>Cartão</th><th>Situação</th><th></th></tr></thead>
+    <thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Dia</th><th>Cartão</th><th>Situação</th><th>Ações</th></tr></thead>
     <tbody>
     {% for r in rows %}
     <tr>
@@ -83,7 +88,7 @@
         {{ r.rule.expected_cents | brl }}
         {% if r.rule.variable %}<span class="pill">variável</span>{% endif %}
       </td>
-      <td>{{ r.rule.day_of_month }}</td>
+      <td>{{ '1º dia útil' if r.rule.day_of_month == 0 else r.rule.day_of_month }}</td>
       <td class="muted">{{ r.cartao }}</td>
       <td>{% if r.rule.active %}<span class="pill ok">Ativa</span>{% else %}<span class="pill">Pausada</span>{% endif %}</td>
       <td>

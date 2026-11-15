@@ -10,6 +10,29 @@
 {% include "_nav.html" %}
 <div class="wrap">
   <h1>Configurações</h1>
+  {% if erro == 'apagar' %}
+  <div class="panel" style="border-color: var(--bad);">
+    Para apagar, digite APAGAR exatamente como está. Nada foi apagado.
+  </div>
+  {% elif erro == 'arquivo' %}
+  <div class="panel" style="border-color: var(--bad);">
+    O arquivo escolhido não é um banco válido. Nada foi importado.
+  </div>
+  {% endif %}
+
+  <h2>Vencimento padrão</h2>
+  <div class="panel">
+    <form class="grid" method="post" action="{{ base() }}/configuracoes/dia_padrao">
+      <label>Sugestão ao cadastrar recorrentes e parcelados
+        <select name="dia">
+          <option value="0" {{ 'selected' if dia_padrao == 0 }}>1º dia útil</option>
+          {% for d in range(1, 32) %}<option value="{{ d }}" {{ 'selected' if d == dia_padrao }}>Dia {{ d }}</option>{% endfor %}
+        </select>
+      </label>
+      <button type="submit" class="primary">Salvar</button>
+    </form>
+    <p class="aviso">O 1º dia útil considera segunda a sexta. Feriados ainda não entram no cálculo.</p>
+  </div>
 
   <h2>Projeção</h2>
   <div class="panel">
@@ -35,7 +58,7 @@
 
   <h2>Apagar dados</h2>
   <div class="panel">
-    <p class="aviso">Apaga lançamentos, recorrentes, parcelados, tags e cartões. Não pode ser desfeito.</p>
+    <p class="aviso">Apaga lançamentos, recorrentes, parcelados, categorias e cartões. Não pode ser desfeito.</p>
     <form class="grid" method="post" action="{{ base() }}/configuracoes/apagar"
           onsubmit="return confirm('Tem certeza que quer apagar todos os dados?')">
       <label>Digite APAGAR para confirmar<input name="confirmacao" autocomplete="off" required></label>

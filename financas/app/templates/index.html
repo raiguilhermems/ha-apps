@@ -19,7 +19,7 @@
   <section class="cards">
     <div class="card"><small>Receitas</small><div class="val">{{ s.receitas_total | brl }}</div></div>
     <div class="card"><small>Despesas</small><div class="val">{{ s.despesas_total | brl }}</div></div>
-    <div class="card"><small>Saldo</small><div class="val">{{ s.saldo | brl }}</div></div>
+    <div class="card"><small>Saldo</small><div class="val saldo-{{ 'pos' if s.saldo >= 0 else 'neg' }}">{{ s.saldo | brl }}</div></div>
     <div class="card"><small>Já pago</small><div class="val ok">{{ s.pago | brl }}</div></div>
     <div class="card"><small>A pagar</small><div class="val">{{ s.a_pagar | brl }}</div></div>
   </section>
@@ -61,7 +61,7 @@
   <h2>Lançamentos do mês</h2>
   <div class="panel">
     <table>
-      <thead><tr><th>Venc.</th><th>Descrição</th><th>Categorias</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>Venc.</th><th>Descrição</th><th>Categorias</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
       <tbody>
       {% for t in txs %}
       {% set atrasada = t.kind == 'despesa' and t.status == 'pendente' and t.due_date < today %}

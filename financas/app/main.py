@@ -228,6 +228,7 @@ def parcelados_page(request: Request, session: Session = Depends(get_session)):
             "saldo_total": data["saldo_total"],
             "cards": cards,
             "ref": current_month(),
+            "dia_padrao": int(get_setting(session, "dia_padrao")),
             "graficos": parcelas_mensal(session),
         },
     )
@@ -251,7 +252,7 @@ def create_installment(
         raise HTTPException(status_code=400, detail="Informe o cartão")
     if total < 1 or not 1 <= current_n <= total:
         raise HTTPException(status_code=400, detail="Parcela atual deve estar entre 1 e o total de parcelas")
-    if not 1 <= due_day <= 31:
+    if not 0 <= due_day <= 31:
         raise HTTPException(status_code=400, detail="Dia do vencimento deve estar entre 1 e 31")
     try:
         int(current_ref[:4]); int(current_ref[5:7])
@@ -417,6 +418,7 @@ def recorrentes_page(request: Request, mes: str | None = None, session: Session 
             "rows": rows,
             "cards": cards,
             "verif": rule_month_status(session, ref),
+            "dia_padrao": int(get_setting(session, "dia_padrao")),
             "today": date.today(),
         },
     )
@@ -432,7 +434,7 @@ def create_recurring(
     variable: bool = Form(False),
     session: Session = Depends(get_session),
 ):
-    if not 1 <= day <= 31:
+    if not 0 <= day <= 31:
         raise HTTPException(status_code=400, detail="Dia do mês deve estar entre 1 e 31")
     create_rule(session, description, parse_brl(amount), day, kind, card_name, variable)
     session.commit()
@@ -468,7 +470,7 @@ def edit_recurring(
     rule = session.get(RecurringRule, rule_id)
     if rule is None:
         raise HTTPException(status_code=404, detail="Recorrência não encontrada")
-    if not 1 <= day <= 31:
+    if not 0 <= day <= 31:
         raise HTTPException(status_code=400, detail="Dia do mês deve estar entre 1 e 31")
     update_rule(session, rule, description, parse_brl(amount), day, kind, card_name, variable)
     session.commit()
@@ -496,7 +498,7 @@ def delete_recurring(rule_id: int, session: Session = Depends(get_session)):
     return RedirectResponse("/recorrentes", status_code=303)
 
 @app.get("/configuracoes")
-def configuracoes_page(request: Request, session: Session = Depends(get_session)):
+def configuracoes_page(request: Request, erro: str | None = None, session: Session = Depends(get_session)):
     tamanho = DB_PATH.stat().st_size / 1024 / 1024 if DB_PATH.exists() else 0
     return templates.TemplateResponse(
         request,
@@ -504,6 +506,8 @@ def configuracoes_page(request: Request, session: Session = Depends(get_session)
         {
             "horizonte": int(get_setting(session, "projecao_meses")),
             "tamanho_mb": f"{tamanho:.2f}".replace(".", ","),
+            "erro": erro,
+            "dia_padrao": int(get_setting(session, "dia_padrao")),
         },
     )
 
@@ -518,7 +522,7 @@ def baixar_backup():
 async def importar_backup(arquivo: UploadFile = File(...)):
     conteudo = await arquivo.read()
     if not conteudo.startswith(b"SQLite format 3\x00"):
-        raise HTTPException(status_code=400, detail="O arquivo não é um banco SQLite válido")
+        return RedirectResponse("/configuracoes?erro=arquivo", status_code=303)
     engine.dispose()
     if DB_PATH.exists():
         shutil.copyfile(DB_PATH, DB_PATH.with_name("finance-antes-da-importacao.db"))
@@ -530,7 +534,7 @@ async def importar_backup(arquivo: UploadFile = File(...)):
 @app.post("/configuracoes/apagar")
 def apagar_dados(confirmacao: str = Form(...), session: Session = Depends(get_session)):
     if confirmacao.strip() != "APAGAR":
-        raise HTTPException(status_code=400, detail="Digite APAGAR para confirmar")
+        return RedirectResponse("/configuracoes?erro=apagar", status_code=303)
     for table in reversed(SQLModel.metadata.sorted_tables):
         if table.name == "setting":
             continue
@@ -544,4 +548,21 @@ def salvar_projecao(meses: int = Form(...), session: Session = Depends(get_sessi
     if not 1 <= meses <= 12:
         raise HTTPException(status_code=400, detail="Use de 1 a 12 meses")
     set_setting(session, "projecao_meses", str(meses))
+    return RedirectResponse("/configuracoes", status_code=303)
+
+
+
+@app.get("/categorias/{tag_id}/editar")
+def editar_categoria_page(tag_id: int, request: Request, session: Session = Depends(get_session)):
+    tag = session.get(Tag, tag_id)
+    if tag is None:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    return templates.TemplateResponse(request, "editar_categoria.html", {"tag": tag})
+
+
+@app.post("/configuracoes/dia_padrao")
+def salvar_dia_padrao(dia: int = Form(...), session: Session = Depends(get_session)):
+    if not 0 <= dia <= 31:
+        raise HTTPException(status_code=400, detail="Use 0 (1º dia útil) ou de 1 a 31")
+    set_setting(session, "dia_padrao", str(dia))
     return RedirectResponse("/configuracoes", status_code=303)

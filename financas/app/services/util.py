@@ -1,3 +1,5 @@
+import calendar
+from datetime import date, timedelta
 """Utilitários de data e dinheiro. Meses no formato AAAA-MM."""
 
 from calendar import monthrange
@@ -26,9 +28,15 @@ def month_bounds(ref: str) -> tuple[date, date]:
 
 
 def due_in_month(ref: str, day: int) -> date:
-    """Dia `day` do mês, limitado ao último dia do mês (ex.: 31 vira 30 em abril)."""
+    """Dia `day` do mês `ref` (AAAA-MM). day=0 é o 1º dia útil (seg a sex; feriados não entram)."""
     y, m = map(int, ref.split("-"))
-    return date(y, m, min(day, monthrange(y, m)[1]))
+    if day == 0:
+        d = date(y, m, 1)
+        while d.weekday() >= 5:
+            d += timedelta(days=1)
+        return d
+    ultimo = calendar.monthrange(y, m)[1]
+    return date(y, m, min(day, ultimo))
 
 
 def parse_brl(text: str) -> int:
@@ -41,7 +49,7 @@ def parse_brl(text: str) -> int:
 def fmt_brl(cents: int) -> str:
     s = f"{abs(cents) / 100:,.2f}"  # 1,234.56
     s = s.replace(",", "X").replace(".", ",").replace("X", ".")  # 1.234,56
-    return ("-" if cents < 0 else "") + "R$ " + s
+    return ("-" if cents < 0 else "") + "R$\u00a0" + s
 
 
 def mes_curto(ref: str) -> str:

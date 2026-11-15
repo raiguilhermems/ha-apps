@@ -9,15 +9,15 @@
 <body>
 {% include "_nav.html" %}
 <div class="wrap">
-  <p><a href="/categorias">‹ Categorias</a></p>
+  <p><a href="{{ base() }}/categorias">‹ Categorias</a></p>
   <h1>{{ tag.name | capitalize }}
     {% if tag.excludes_from_total %}<span class="pill">não soma no total</span>{% endif %}
   </h1>
 
   <div class="monthbar">
-    <a href="/categorias/{{ tag.id }}?mes={{ prev }}">‹ {{ prev | mes }}</a>
+    <a href="{{ base() }}/categorias/{{ tag.id }}?mes={{ prev }}">‹ {{ prev | mes }}</a>
     <strong>{{ ref | mes }}</strong>
-    <a href="/categorias/{{ tag.id }}?mes={{ next }}">{{ next | mes }} ›</a>
+    <a href="{{ base() }}/categorias/{{ tag.id }}?mes={{ next }}">{{ next | mes }} ›</a>
   </div>
 
   <section class="cards">

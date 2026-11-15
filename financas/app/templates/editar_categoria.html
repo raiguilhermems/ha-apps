@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Editar categoria</title>
+  {% include "_style.html" %}
+</head>
+<body>
+{% include "_nav.html" %}
+<div class="wrap">
+  <h1>Editar categoria</h1>
+  <div class="panel">
+    <form class="grid" method="post" action="{{ base() }}/categorias/{{ tag.id }}/atualizar">
+      <label>Nome<input name="name" value="{{ tag.name }}" required></label>
+      <label class="check"><input type="checkbox" name="excludes" {{ 'checked' if tag.excludes_from_total }}> Não soma no total</label>
+      <button type="submit" class="primary">Salvar</button>
+    </form>
+  </div>
+  <p><a href="{{ base() }}/categorias">‹ Voltar</a></p>
+</div>
+</body>
+</html>

@@ -186,4 +186,45 @@
     th, td { padding: .35rem; }
     .monthnav strong, .monthbar strong { min-width: 7rem; font-size: 1.05rem; }
   }
+
+  /* Campos dentro de formulários ocupam a largura da coluna */
+  .grid input, .grid select, .grid textarea {
+    width: 100%; min-width: 0; box-sizing: border-box;
+  }
+  .grid label { min-width: 0; }
+
+  /* Botões das tabelas ficam pequenos e lado a lado */
+  td form.inline { display: inline-block; margin: 0 .25rem .25rem 0; }
+  button.small, a.small, .btn.small {
+    width: auto; padding: .3rem .6rem; font-size: .8rem; white-space: nowrap;
+  }
+  td { vertical-align: middle; }
+
+  /* Ajuste mobile 2: formulários e tabelas */
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: minmax(0, 1fr) !important; }
+    .grid > label, .grid > button { min-width: 0; }
+    .grid input:not([type="checkbox"]) {
+      display: block; width: 100%; max-width: 100%; min-width: 0;
+      box-sizing: border-box; -webkit-appearance: none; appearance: none;
+    }
+    .grid select { display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
+    .panel table { min-width: 520px; }
+    .panel table th:last-child, .panel table td:last-child { white-space: nowrap; }
+    .panel table td:last-child form.inline,
+    .panel table td:last-child a.btn { display: inline-block; margin: 0 .25rem .25rem 0; }
+    .panel table td:last-child button,
+    .panel table td:last-child a.btn { width: auto; padding: .3rem .6rem; font-size: .8rem; }
+  }
+
+  /* Cabeçalhos e valores centralizados nas tabelas */
+  .panel table th, .panel table td { text-align: center; }
+
+  /* Checkbox com rótulo colado no campo */
+  label.check { display: inline-flex; align-items: center; gap: .5rem; justify-self: start; width: auto; }
+  label.check input[type="checkbox"] { width: auto; margin: 0; }
+
+  /* Cores do saldo */
+  .val.saldo-pos { color: var(--ok, #34d399); }
+  .val.saldo-neg { color: var(--bad, #f87171); }
 </style>
