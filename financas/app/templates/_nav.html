@@ -1,3 +1,16 @@
+<style>
+  @media (max-width: 640px) {
+    .topbar-inner { flex-wrap: wrap; }
+    .topbar .brand { width: 100%; }
+    .topbar .menu {
+      display: flex; flex-wrap: nowrap; width: 100%;
+      overflow-x: auto; white-space: nowrap;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
+    .topbar .menu::-webkit-scrollbar { display: none; }
+    .topbar .menu a { flex: 0 0 auto; padding: .45rem .8rem; }
+  }
+</style>
 <header class="topbar">
   <div class="topbar-inner">
     <a class="brand" href="{{ base() }}/">Finanças</a>

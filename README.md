@@ -62,11 +62,11 @@ Vencimento padrão dos lançamentos, horizonte da projeção, backup e importaç
 
 ## Últimas versões
 
+- **0.0.14**: navbar com rolagem no celular e lançamentos em linha única no celular.
 - **0.0.13**: início com receitas e despesas separadas e cores por tipo; categorias clicáveis no início; gráfico mensal por categoria.
 - **0.0.12**: remoção do código legado de faturas e textos de categorias.
 - **0.0.11**: código do app dividido em módulos por tela e testes automatizados.
 - **0.0.10**: categorias e cartões em caixinhas clicáveis.
-- **0.0.9**: edição de parcelamentos.
 
 Histórico completo em [CHANGELOG completo](financas/CHANGELOG.md).
 

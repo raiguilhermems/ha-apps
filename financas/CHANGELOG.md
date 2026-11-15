@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.14
+
+- Celular: a barra de abas ficou numa faixa só, com rolagem horizontal.
+- Celular: o cabeçalho de cada grupo (Receitas e Despesas) e o nome do lançamento ficam em linha única.
+- README atualizado, com descrição de cada tela e capturas novas.
+- Script `scripts/seed_demo.py` para gerar um banco de demonstração com dados fictícios (uso de desenvolvimento).
+
 ## 0.0.13
 
 - Início: lançamentos separados em receitas e despesas, com cabeçalho e total de cada grupo. Receitas em verde e despesas em vermelho.
