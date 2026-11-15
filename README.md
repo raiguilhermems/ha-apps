@@ -4,24 +4,47 @@ Controle financeiro pessoal, autohospedado, rodando como add-on do Home Assistan
 
 ## Telas
 
+### Início
+
+Visão do mês escolhido: totais de receitas, despesas, saldo e o que já foi pago ou ainda falta pagar. Os lançamentos aparecem com as receitas primeiro e as despesas depois, cada grupo com o seu total. Também mostra os atrasados, um gráfico de receitas × despesas e a projeção dos próximos meses.
+
 ![Início](docs/inicio.png)
 
 ![Início, outra visão](docs/inicio1.png)
 
 ---
+
+### Parcelados
+
+Todos os parcelamentos em andamento, com a forma de pagamento, o cartão (quando houver), as categorias e o saldo que ainda falta pagar. Traz um gráfico com o total de parcelas por mês e o formulário para cadastrar um novo parcelamento.
+
 ![Parcelados](docs/parcelados.png)
 
 ![Parcelados, outra visão](docs/parcelados1.png)
 
 ---
+
+### Recorrentes
+
+Regras mensais, como salário, aluguel e assinaturas. A tabela de verificação mostra, mês a mês, se cada regra já foi lançada, paga ou recebida, e avisa quando o valor real é diferente do previsto.
+
 ![Recorrentes](docs/recorrentes.png)
 
 ---
+
+### Categorias
+
+Lista das categorias usadas nos lançamentos. Ao abrir uma categoria, você vê os lançamentos dela no mês escolhido e um gráfico com a evolução mensal de receitas e despesas dela.
+
 ![Categorias](docs/categorias.png)
 
 ---
-![Configurações](docs/configuracoes.png)
 
+### Configurações
+
+Vencimento padrão dos lançamentos, horizonte da projeção, backup e importação do banco, e a opção de apagar todos os dados.
+
+![Configurações](docs/configuracoes.png)
 
 ## O que faz
 
