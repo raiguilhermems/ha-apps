@@ -25,6 +25,7 @@
     <div class="card"><small>Parcelamentos ativos</small><div class="val">{{ plans | rejectattr('concluido') | list | length }}</div></div>
   </section>
 
+  <p><a class="btn" href="{{ base() }}/parcelados/importar">Importar fatura do Nubank</a></p>
   <h2>Parcelas por mês (próximos 12 meses)</h2>
   <div class="panel">
     <div style="position:relative;height:280px"><canvas id="chartParcelas"></canvas></div>

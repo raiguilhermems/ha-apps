@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 
 from app.db import init_db
-from app.routers import categorias, configuracoes, lancamentos, parcelados, recorrentes
+from app.routers import categorias, configuracoes, importacao, lancamentos, parcelados, recorrentes
 from app.web import _prefixo
 
 
@@ -29,6 +29,7 @@ async def ingress_prefixo(request: Request, call_next):
 
 app.include_router(lancamentos.router)
 app.include_router(parcelados.router)
+app.include_router(importacao.router)
 app.include_router(categorias.router)
 app.include_router(recorrentes.router)
 app.include_router(configuracoes.router)

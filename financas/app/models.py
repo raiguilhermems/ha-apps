@@ -44,6 +44,7 @@ class InstallmentPlan(SQLModel, table=True):
     installment_cents: int
     installments_total: int
     first_due_month: str  # AAAA-MM
+    origem_csv: str = ""  # nome original da compra na fatura importada (para reconhecer duplicidades)
     due_day: int = 10
     tags_text: str = ""
     generated_until: Optional[str] = None  # AAAA-MM, último mês já gerado
@@ -71,6 +72,19 @@ class Transaction(SQLModel, table=True):
 class TransactionTag(SQLModel, table=True):
     transaction_id: int = Field(foreign_key="transacao.id", primary_key=True)
     tag_id: int = Field(foreign_key="tag.id", primary_key=True)
+
+
+class ImportacaoIgnorada(SQLModel, table=True):
+    """Compra da fatura que o usuário excluiu na prévia. Aparece desmarcada nas próximas importações."""
+
+    __tablename__ = "importacao_ignorada"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    data_compra: date
+    nome_original: str
+    total: int
+    account_id: int = Field(foreign_key="account.id")
+    valor_cents: int
 
 
 class Setting(SQLModel, table=True):

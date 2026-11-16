@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Importar fatura</title>
+  {% include "_style.html" %}
+</head>
+<body>
+{% include "_nav.html" %}
+<div class="wrap">
+  <p><a href="{{ base() }}/parcelados">‹ Parcelados</a></p>
+  <h1>Importar fatura do Nubank</h1>
+
+  {% if erro %}
+  <div class="panel" style="border-color: var(--bad);">
+    <strong>
+      {% if erro == 'cartao' %}Informe o nome do cartão.
+      {% elif erro == 'arquivo' %}Não consegui ler este arquivo. Confira se é o CSV da fatura do Nubank.
+      {% elif erro == 'vazio' %}Nenhuma compra parcelada encontrada neste arquivo.
+      {% else %}Algo deu errado.{% endif %}
+    </strong>
+  </div>
+  {% endif %}
+
+  <div class="panel">
+    <form class="grid" method="post" action="{{ base() }}/parcelados/importar/previa" enctype="multipart/form-data">
+      <label>Arquivo CSV da fatura<input type="file" name="arquivo" accept=".csv,text/csv" required></label>
+      <label>Cartão
+        <input name="cartao" list="cartoes" required placeholder="Nubank">
+        <datalist id="cartoes">{% for c in cartoes %}<option value="{{ c.name }}">{% endfor %}</datalist>
+      </label>
+      <label>Vencimento da fatura<input type="date" name="vencimento" value="{{ hoje }}" required></label>
+      <button type="submit" class="primary">Ver prévia</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

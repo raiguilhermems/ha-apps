@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prévia da importação</title>
+  {% include "_style.html" %}
+</head>
+<body>
+{% include "_nav.html" %}
+<div class="wrap">
+  <p><a href="{{ base() }}/parcelados/importar">‹ Voltar</a></p>
+  <h1>Prévia da importação</h1>
+  <p class="muted">Cartão: <strong>{{ cartao }}</strong> · Vencimento: <strong>{{ vencimento.strftime('%d/%m/%Y') }}</strong></p>
+  <p class="aviso">Marque as compras que quer cadastrar. Compras já cadastradas e compras excluídas antes vêm desmarcadas.</p>
+
+  <form method="post" action="{{ base() }}/parcelados/importar/confirmar">
+    <input type="hidden" name="cartao" value="{{ cartao }}">
+    <input type="hidden" name="vencimento" value="{{ vencimento.isoformat() }}">
+
+    <div class="panel">
+      <table>
+        <thead>
+          <tr><th>Incluir</th><th>Compra</th><th>Nome exibido</th><th>Parcela</th><th>Valor</th><th>Categorias</th><th>Situação</th></tr>
+        </thead>
+        <tbody>
+        {% for r in previa %}
+        {% set i = loop.index0 %}
+        <tr>
+          <td>
+            <input type="checkbox" name="incluir_{{ i }}" {% if r.incluir %}checked{% endif %}>
+            <input type="hidden" name="indices" value="{{ i }}">
+            <input type="hidden" name="data_{{ i }}" value="{{ r.linha.data.isoformat() }}">
+            <input type="hidden" name="original_{{ i }}" value="{{ r.linha.nome_original }}">
+            <input type="hidden" name="total_{{ i }}" value="{{ r.linha.total }}">
+            <input type="hidden" name="n_{{ i }}" value="{{ r.linha.parcela }}">
+            <input type="hidden" name="valor_{{ i }}" value="{{ r.linha.valor_cents }}">
+            <input type="hidden" name="status_{{ i }}" value="{{ r.status }}">
+            <input type="hidden" name="plano_{{ i }}" value="{{ r.plano_id or '' }}">
+          </td>
+          <td class="muted">{{ r.linha.data.strftime('%d/%m') }} · {{ r.linha.nome_original }}</td>
+          <td><input name="nome_{{ i }}" value="{{ r.nome }}" style="width:100%"></td>
+          <td>{{ r.linha.parcela }}/{{ r.linha.total }}</td>
+          <td>{{ r.linha.valor_cents | brl }}</td>
+          <td><input name="categorias_{{ i }}" placeholder="mercado, lazer" style="width:100%"></td>
+          <td>
+            {% if r.status == 'nova' %}<span class="pill ok">nova</span>
+            {% elif r.status == 'existente' %}
+              <span class="pill">já cadastrada</span><br>
+              <label class="check"><input type="checkbox" name="atualizar_{{ i }}"> atualizar</label>
+            {% else %}<span class="pill bad">excluída antes</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <p><button type="submit" class="primary">Gravar importação</button></p>
+  </form>
+</div>
+</body>
+</html>
