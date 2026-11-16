@@ -99,11 +99,11 @@ Vencimento padrão dos lançamentos, horizonte da projeção, backup e importaç
 
 ## Últimas versões
 
+- **0.0.16**: aba Investimentos, com caixinhas, tipo, valor atual, histórico de atualizações e gráficos de evolução; Parcelados mostra o resultado da importação da fatura.
 - **0.0.15**: importação da fatura do Nubank com prévia; cadastro de cartões com dia de pagamento; cartão escolhido por lista nos formulários.
 - **0.0.14**: navbar com rolagem no celular e lançamentos em linha única no celular.
 - **0.0.13**: início com receitas e despesas separadas e cores por tipo; categorias clicáveis no início; gráfico mensal por categoria.
 - **0.0.12**: remoção do código legado de faturas e textos de categorias.
-- **0.0.11**: código do app dividido em módulos por tela e testes automatizados.
 
 Histórico completo em [CHANGELOG completo](financas/CHANGELOG.md).
 
