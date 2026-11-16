@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Importar fatura</title>
   {% include "_style.html" %}
+  <style>
+    .import-form { display: flex; flex-wrap: wrap; gap: 1rem 1.25rem; align-items: flex-end; }
+    .import-form label { display: flex; flex-direction: column; gap: .35rem; flex: 1 1 13rem; min-width: 0; }
+    .import-form label.campo-arquivo { flex: 2 1 18rem; }
+    .import-form input, .import-form select { width: 100%; box-sizing: border-box; }
+    .import-form .dica { flex: 1 1 100%; margin: 0; }
+    .import-form .acao { flex: 1 1 100%; display: flex; justify-content: flex-end; }
+  </style>
 </head>
 <body>
 {% include "_nav.html" %}
@@ -13,27 +21,34 @@
   <h1>Importar fatura do Nubank</h1>
 
   {% if erro %}
-  <div class="panel" style="border-color: var(--bad);">
-    <strong>
-      {% if erro == 'cartao' %}Informe o nome do cartão.
-      {% elif erro == 'arquivo' %}Não consegui ler este arquivo. Confira se é o CSV da fatura do Nubank.
-      {% elif erro == 'vazio' %}Nenhuma compra parcelada encontrada neste arquivo.
-      {% else %}Algo deu errado.{% endif %}
-    </strong>
-  </div>
+  <div class="panel" style="border-color: var(--bad);"><strong>{{ erro }}</strong></div>
   {% endif %}
 
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/parcelados/importar/previa" enctype="multipart/form-data">
-      <label>Arquivo CSV da fatura<input type="file" name="arquivo" accept=".csv,text/csv" required></label>
-      <label>Cartão
-        <input name="cartao" list="cartoes" required placeholder="Nubank">
-        <datalist id="cartoes">{% for c in cartoes %}<option value="{{ c.name }}">{% endfor %}</datalist>
+    <form class="import-form" method="post" action="{{ base() }}/parcelados/importar/previa" enctype="multipart/form-data">
+      <label class="campo-arquivo">Arquivo CSV da fatura<input type="file" name="arquivo" accept=".csv,text/csv" required></label>
+      <label>Mês da fatura
+        <span style="display:flex;gap:.5rem">
+          <select name="mes_num" style="flex:1">{% for num, nome in meses %}<option value="{{ num }}"{% if num == mes_atual_num %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select>
+          <select name="ano" style="flex:1">{% for a in anos %}<option value="{{ a }}"{% if a == ano_atual %} selected{% endif %}>{{ a }}</option>{% endfor %}</select>
+        </span>
       </label>
-      <label>Vencimento da fatura<input type="date" name="vencimento" value="{{ hoje }}" required></label>
-      <button type="submit" class="primary">Ver prévia</button>
+      <label>Cartão da lista
+        <select name="cartao_id">
+          <option value="">— escolher —</option>
+          {% for c in cartoes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+        </select>
+      </label>
+      <p class="muted dica">Cartão novo? Preencha os dois campos abaixo. Ele é criado ao continuar.</p>
+      <label>Nome do cartão novo<input name="novo_nome" placeholder="Nubank"></label>
+      <label>Dia de pagamento (cartão novo)<input name="novo_dia" type="number" min="1" max="31" placeholder="5"></label>
+      <div class="acao"><button type="submit" class="primary">Ver prévia</button></div>
     </form>
   </div>
+
+  {% if not cartoes %}
+  <p class="muted">Nenhum cartão cadastrado ainda. Pode cadastrar aqui mesmo ou na aba Cartões.</p>
+  {% endif %}
 </div>
 </body>
 </html>

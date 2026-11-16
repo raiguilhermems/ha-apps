@@ -2,26 +2,62 @@
 
 import csv
 from datetime import date
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.db import get_session
 from app.models import Account
+from app.services.cartoes import criar, listar, vencimento_fatura
 from app.services.fatura_nubank import LinhaFatura, ler_fatura, limpa_nome
 from app.services.importacao import gravar, montar_previa
 from app.web import RedirectResponse, templates
 
 router = APIRouter()
 
+MESES = [
+    (1, "janeiro"), (2, "fevereiro"), (3, "março"), (4, "abril"),
+    (5, "maio"), (6, "junho"), (7, "julho"), (8, "agosto"),
+    (9, "setembro"), (10, "outubro"), (11, "novembro"), (12, "dezembro"),
+]
+
+
+def _volta(mensagem: str) -> RedirectResponse:
+    return RedirectResponse(f"/parcelados/importar?erro={quote(mensagem)}", status_code=303)
+
+
+def _escolher_cartao(session: Session, cartao_id: str, novo_nome: str, novo_dia: str) -> Account:
+    if cartao_id.strip():
+        try:
+            cartao = session.get(Account, int(cartao_id))
+        except ValueError:
+            cartao = None
+        if cartao is None or cartao.type != "cartao":
+            raise ValueError("Cartão não encontrado")
+        return cartao
+    if novo_nome.strip():
+        dia = novo_dia.strip()
+        cartao = criar(session, novo_nome, int(dia) if dia else None)
+        session.commit()
+        return cartao
+    raise ValueError("Escolha um cartão da lista ou preencha os dados de um cartão novo")
+
 
 @router.get("/parcelados/importar")
 def importar_page(request: Request, erro: str | None = None, session: Session = Depends(get_session)):
-    cartoes = session.exec(select(Account).where(Account.type == "cartao").order_by(Account.name)).all()
+    hoje = date.today()
     return templates.TemplateResponse(
         request,
         "importar_fatura.html",
-        {"cartoes": cartoes, "erro": erro, "hoje": date.today()},
+        {
+            "cartoes": listar(session),
+            "erro": erro,
+            "meses": MESES,
+            "anos": list(range(hoje.year - 1, hoje.year + 3)),
+            "mes_atual_num": hoje.month,
+            "ano_atual": hoje.year,
+        },
     )
 
 
@@ -29,25 +65,35 @@ def importar_page(request: Request, erro: str | None = None, session: Session = 
 async def importar_previa(
     request: Request,
     arquivo: UploadFile = File(...),
-    cartao: str = Form(...),
-    vencimento: date = Form(...),
+    cartao_id: str = Form(""),
+    novo_nome: str = Form(""),
+    novo_dia: str = Form(""),
+    mes_num: str = Form(...),
+    ano: str = Form(...),
     session: Session = Depends(get_session),
 ):
-    cartao = cartao.strip()
-    if not cartao:
-        return RedirectResponse("/parcelados/importar?erro=cartao", status_code=303)
     try:
-        linhas = ler_fatura(await arquivo.read())
+        linhas: list[LinhaFatura] = ler_fatura(await arquivo.read())
     except (ValueError, csv.Error):
-        return RedirectResponse("/parcelados/importar?erro=arquivo", status_code=303)
+        return _volta("Não consegui ler este arquivo. Confira se é o CSV da fatura do Nubank.")
     if not linhas:
-        return RedirectResponse("/parcelados/importar?erro=vazio", status_code=303)
+        return _volta("Nenhuma compra parcelada encontrada neste arquivo.")
 
-    previa = montar_previa(session, linhas, cartao)
+    try:
+        mes = f"{int(ano):04d}-{int(mes_num):02d}"
+        cartao = _escolher_cartao(session, cartao_id, novo_nome, novo_dia)
+        if cartao.dia_pagamento is None:
+            raise ValueError("Este cartão não tem dia de pagamento. Edite-o na aba Cartões.")
+        vencimento = vencimento_fatura(mes, cartao.dia_pagamento)
+    except ValueError as e:
+        session.rollback()
+        return _volta(str(e))
+
+    previa = montar_previa(session, linhas, cartao.name)
     return templates.TemplateResponse(
         request,
         "previa_fatura.html",
-        {"previa": previa, "cartao": cartao, "vencimento": vencimento},
+        {"previa": previa, "cartao": cartao.name, "vencimento": vencimento},
     )
 
 
@@ -56,7 +102,7 @@ async def importar_confirmar(request: Request, session: Session = Depends(get_se
     form = await request.form()
     cartao = str(form.get("cartao", "")).strip()
     if not cartao:
-        return RedirectResponse("/parcelados/importar?erro=cartao", status_code=303)
+        return _volta("Cartão não informado")
     vencimento = date.fromisoformat(str(form["vencimento"]))
 
     itens = []

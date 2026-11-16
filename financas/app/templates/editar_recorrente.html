@@ -27,10 +27,11 @@
         </select>
       </label>
       <label data-cartao>Cartão (opcional)
-        <input name="card_name" list="cartoes" value="{{ card_name }}" placeholder="Ex.: Nubank">
-        <datalist id="cartoes">
-          {% for c in cards %}<option value="{{ c.name }}">{% endfor %}
-        </datalist>
+        <select name="card_name">
+  <option value="">— escolher —</option>
+  {% for c in cards %}<option value="{{ c.name }}"{% if c.name == card_name %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+</select>
+
       </label>
       <label>Categorias (separadas por vírgula)<input name="categorias" value="{{ categorias }}" placeholder="mercado, lazer"></label>
       <label class="check"><input type="checkbox" name="variable" {{ 'checked' if rule.variable }}> Valor variável (ex.: luz)</label>

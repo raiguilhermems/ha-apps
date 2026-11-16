@@ -16,6 +16,7 @@ from app.services.parcelados import (
     schedule_summaries,
     update_plan,
 )
+from app.services.cartoes import buscar_por_nome
 from app.services.settings import get_setting
 from app.services.util import current_month, parse_brl
 from app.web import RedirectResponse, templates
@@ -58,6 +59,8 @@ def create_installment(
     if payment_method not in ("cartao", "boleto", "carne", "financiamento", "outro"):
         return RedirectResponse("/parcelados?erro=forma", status_code=303)
     if payment_method == "cartao" and not card_name.strip():
+        return RedirectResponse("/parcelados?erro=cartao", status_code=303)
+    if payment_method == "cartao" and buscar_por_nome(session, card_name) is None:
         return RedirectResponse("/parcelados?erro=cartao", status_code=303)
     if total < 1 or not 1 <= current_n <= total:
         return RedirectResponse("/parcelados?erro=parcela", status_code=303)

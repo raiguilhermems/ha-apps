@@ -12,7 +12,7 @@
   <h1>Parcelados</h1>
   {% if erro %}
   <div class="panel" style="border-color: var(--bad);">
-    {{ {'cartao': 'Informe o nome do cartão para parcelas de cartão. Nada foi cadastrado.',
+    {{ {'cartao': 'Escolha um cartão cadastrado (aba Cartões) para parcelas de cartão. Nada foi cadastrado.',
         'forma': 'Escolha uma forma de pagamento válida. Nada foi cadastrado.',
         'parcela': 'A parcela atual precisa estar entre 1 e o total de parcelas. Nada foi cadastrado.',
         'dia': 'Dia do vencimento inválido. Nada foi cadastrado.',
@@ -45,10 +45,11 @@
         </select>
       </label>
       <label>Cartão (se for cartão)
-        <input name="card_name" list="cartoes" placeholder="Ex.: Nubank">
-        <datalist id="cartoes">
-          {% for c in cards %}<option value="{{ c.name }}">{% endfor %}
-        </datalist>
+        <select name="card_name">
+  <option value="">— escolher —</option>
+  {% for c in cards %}<option value="{{ c.name }}"{% if c.name == card_name %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+</select>
+
       </label>
       <label>Valor da parcela (R$)<input name="amount" placeholder="150,00" required></label>
       <label>Total de parcelas<input type="number" name="total" min="1" required></label>

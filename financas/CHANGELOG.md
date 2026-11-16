@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.15
+
+- Importação da fatura do Nubank (CSV) na aba Parcelados, com prévia antes de gravar.
+- Prévia marca compras já cadastradas e compras ignoradas em importações anteriores.
+- Reimportar no mês seguinte não duplica as parcelas já cadastradas.
+- Nova aba Cartões: cadastro com nome e dia de pagamento da fatura (fim de semana passa para o próximo dia útil).
+- Parcelados e Recorrentes escolhem o cartão numa lista de cartões cadastrados.
+- Mês da fatura escolhido em lista de mês e ano, já preenchido com o mês atual.
+- Atenção: esta versão cria as colunas `account.dia_pagamento` e `installment_plan.origem_csv` e a tabela `importacao_ignorada`. Em instalações com dados antigos, apague o banco ou reinstale o add-on.
 ## 0.0.14
 
 - Celular: a barra de abas ficou numa faixa só, com rolagem horizontal.

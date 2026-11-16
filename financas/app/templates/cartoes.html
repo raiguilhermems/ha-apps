@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cartões</title>
+  {% include "_style.html" %}
+  <style>
+    .import-form { display: flex; flex-wrap: wrap; gap: 1rem 1.25rem; align-items: flex-end; }
+    .import-form label { display: flex; flex-direction: column; gap: .35rem; flex: 1 1 14rem; min-width: 0; }
+    .import-form input { width: 100%; box-sizing: border-box; }
+    .import-form .acao { flex: 1 1 100%; display: flex; justify-content: flex-end; }
+    .linha-cartao { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+    .linha-cartao input[name="nome"] { flex: 1 1 14rem; min-width: 0; }
+    .linha-cartao input[name="dia"] { width: 5rem; }
+  </style>
+</head>
+<body>
+{% include "_nav.html" %}
+<div class="wrap">
+  <h1>Cartões</h1>
+
+  {% if erro %}
+  <div class="panel" style="border-color: var(--bad);"><strong>{{ erro }}</strong></div>
+  {% endif %}
+
+  <h2>Novo cartão</h2>
+  <div class="panel">
+    <form class="import-form" method="post" action="{{ base() }}/cartoes">
+      <label>Nome do cartão<input name="nome" required placeholder="Nubank"></label>
+      <label>Dia de pagamento da fatura<input name="dia" type="number" min="1" max="31" required placeholder="5"></label>
+      <div class="acao"><button type="submit" class="primary">Cadastrar</button></div>
+    </form>
+  </div>
+
+  <h2>Cadastrados</h2>
+  <div class="panel">
+    {% if cartoes %}
+    <table>
+      <thead><tr><th>Nome e dia de pagamento</th><th>Ações</th></tr></thead>
+      <tbody>
+      {% for c in cartoes %}
+      <tr>
+        <td>
+          <form class="linha-cartao" method="post" action="{{ base() }}/cartoes/{{ c.id }}/atualizar">
+            <input name="nome" value="{{ c.name }}" required>
+            <input name="dia" type="number" min="1" max="31" value="{{ c.dia_pagamento or '' }}" required>
+            <button type="submit" class="small">Salvar</button>
+          </form>
+        </td>
+        <td>
+          {% if vinculos[c.id] %}
+            <span class="pill">com parcelamentos ou recorrentes</span>
+          {% else %}
+            <form class="inline" method="post" action="{{ base() }}/cartoes/{{ c.id }}/excluir" onsubmit="return confirm('Excluir o cartão {{ c.name }}?')">
+              <button type="submit" class="danger small">Excluir</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">Nenhum cartão cadastrado ainda.</p>
+    {% endif %}
+  </div>
+</div>
+</body>
+</html>
