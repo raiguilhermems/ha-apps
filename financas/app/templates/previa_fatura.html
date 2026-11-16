@@ -12,7 +12,7 @@
   <p><a href="{{ base() }}/parcelados/importar">‹ Voltar</a></p>
   <h1>Prévia da importação</h1>
   <p class="muted">Cartão: <strong>{{ cartao }}</strong> · Vencimento: <strong>{{ vencimento.strftime('%d/%m/%Y') }}</strong></p>
-  <p class="aviso">Marque as compras que quer cadastrar. Compras já cadastradas e compras excluídas antes vêm desmarcadas.</p>
+  <p class="aviso">Marque as compras que quer cadastrar. Compras já cadastradas e compras ignoradas antes vêm desmarcadas. Marque uma delas se quiser cadastrar agora.</p>
 
   <form method="post" action="{{ base() }}/parcelados/importar/confirmar">
     <input type="hidden" name="cartao" value="{{ cartao }}">
@@ -48,7 +48,7 @@
             {% elif r.status == 'existente' %}
               <span class="pill">já cadastrada</span><br>
               <label class="check"><input type="checkbox" name="atualizar_{{ i }}"> atualizar</label>
-            {% else %}<span class="pill bad">excluída antes</span>{% endif %}
+            {% else %}<span class="pill bad">ignorada antes</span>{% endif %}
           </td>
         </tr>
         {% endfor %}

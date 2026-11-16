@@ -5,7 +5,7 @@ from datetime import date
 from sqlmodel import Session, select
 
 from app.models import Account, ImportacaoIgnorada, InstallmentPlan
-from app.services.fatura_nubank import LinhaFatura, chave_nome
+from app.services.fatura_nubank import LinhaFatura, chave_nome, limpa_nome
 from app.services.parcelados import create_plan, generate_installments, update_plan
 
 TOLERANCIA_CENTAVOS = 20
@@ -26,7 +26,7 @@ def _plano_existente(session: Session, linha: LinhaFatura, card_id: int) -> Inst
     ).all()
     for p in planos:
         if p.origem_csv:
-            mesmo_nome = chave_nome(p.origem_csv) == chave_nome(linha.nome_original)
+            mesmo_nome = chave_nome(limpa_nome(p.origem_csv)) == chave_nome(linha.nome)
         else:
             mesmo_nome = chave_nome(p.description) == chave_nome(linha.nome)
         if mesmo_nome and abs(p.installment_cents - linha.valor_cents) <= TOLERANCIA_CENTAVOS:
@@ -37,13 +37,15 @@ def _plano_existente(session: Session, linha: LinhaFatura, card_id: int) -> Inst
 def _ignorada(session: Session, linha: LinhaFatura, card_id: int) -> bool:
     registros = session.exec(
         select(ImportacaoIgnorada).where(
-            ImportacaoIgnorada.data_compra == linha.data,
-            ImportacaoIgnorada.nome_original == linha.nome_original,
             ImportacaoIgnorada.total == linha.total,
             ImportacaoIgnorada.account_id == card_id,
         )
     ).all()
-    return any(abs(r.valor_cents - linha.valor_cents) <= TOLERANCIA_CENTAVOS for r in registros)
+    return any(
+        chave_nome(limpa_nome(r.nome_original)) == chave_nome(linha.nome)
+        and abs(r.valor_cents - linha.valor_cents) <= TOLERANCIA_CENTAVOS
+        for r in registros
+    )
 
 
 def montar_previa(session: Session, linhas: list[LinhaFatura], cartao_nome: str) -> list[dict]:
@@ -106,14 +108,14 @@ def gravar(session: Session, cartao_nome: str, vencimento: date, itens: list[dic
                 dia,
                 item["categorias"],
             )
-            plano.origem_csv = linha.nome_original
+            plano.origem_csv = linha.nome
             session.add(plano)
             criadas += 1
         elif not _ignorada(session, linha, card.id):
             session.add(
                 ImportacaoIgnorada(
                     data_compra=linha.data,
-                    nome_original=linha.nome_original,
+                    nome_original=linha.nome,
                     total=linha.total,
                     account_id=card.id,
                     valor_cents=linha.valor_cents,

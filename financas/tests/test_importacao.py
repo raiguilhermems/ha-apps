@@ -59,9 +59,9 @@ def test_previa_nova_e_gravacao_cria_planos(session):
     planos = session.exec(select(InstallmentPlan)).all()
     assert len(planos) == 3
     assert {p.origem_csv for p in planos} == {
-        "Loja Exemplo - Parcela 1/10",
-        "Loja Teste - Parcela 1/3",
-        "Restaurante Teste - Parcela 1/3",
+        "Loja Exemplo",
+        "Loja Teste",
+        "Restaurante Teste",
     }
 
 
@@ -104,3 +104,21 @@ def test_tolerancia_de_20_centavos(session):
 
     assert montar_previa(session, [linha(9320)], "Nubank")[0]["status"] == "existente"
     assert montar_previa(session, [linha(9340)], "Nubank")[0]["status"] == "nova"
+
+
+def test_parcela_diferente_na_reimportacao_nao_duplica(session):
+    novembro = ler_fatura('date,title,amount\n2026-09-27,Loja Exemplo - Parcela 1/10,"62,09"\n'.encode())
+    gravar(session, "Nubank", VENCIMENTO, aceitar(montar_previa(session, novembro, "Nubank")))
+
+    dezembro = ler_fatura('date,title,amount\n2026-10-28,Loja Exemplo - Parcela 2/10,"62,09"\n'.encode())
+    previa = montar_previa(session, dezembro, "Nubank")
+    assert previa[0]["status"] == "existente"
+
+def test_ignorada_reconhecida_mesmo_com_data_de_fatura_diferente(session):
+    novembro = ler_fatura('date,title,amount\n2026-09-27,Loja Exemplo - Parcela 1/10,"62,09"\n'.encode())
+    itens = aceitar(montar_previa(session, novembro, "Nubank"))
+    itens[0]["incluir"] = False
+    gravar(session, "Nubank", VENCIMENTO, itens)
+
+    dezembro = ler_fatura('date,title,amount\n2026-10-28,Loja Exemplo - Parcela 2/10,"62,09"\n'.encode())
+    assert montar_previa(session, dezembro, "Nubank")[0]["status"] == "ignorada"
