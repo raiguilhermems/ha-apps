@@ -64,6 +64,16 @@ Cadastro dos cartões, com o dia de pagamento da fatura (por exemplo, dia 5). Se
 
 ---
 
+### Investimentos
+
+Caixinhas de investimento cadastradas à mão, sem ligação com bancos, corretoras ou APIs. Cada caixinha tem nome, tipo (renda fixa, renda variável, fundos, previdência ou outro) e valor atual. Ao atualizar o valor, o histórico guarda a data e a variação em relação ao registro anterior. A tela mostra o total investido e a evolução ao longo do tempo; cada caixinha tem o seu próprio gráfico e tabela de histórico.
+
+![Investimentos](docs/investimentos.png)
+
+![Detalhe de uma caixinha](docs/investimento_detalhe.png)
+
+---
+
 ### Configurações
 
 Vencimento padrão dos lançamentos, horizonte da projeção, backup e importação do banco, e a opção de apagar todos os dados.
@@ -81,6 +91,7 @@ Vencimento padrão dos lançamentos, horizonte da projeção, backup e importaç
 - Parcelados: boleto, carnê, financiamento ou cartão, com categorias. Parcelas de cartão ficam só na aba Parcelados.
 - Importação da fatura do Nubank (CSV), com prévia antes de gravar, reconhecimento de compras já cadastradas e de compras ignoradas.
 - Cadastro de cartões com dia de pagamento, escolhidos por lista nos formulários.
+- Investimentos: caixinhas com tipo e valor atual, histórico de atualizações e gráfico de evolução. Sem vínculo externo.
 - Categorias, com filtro por mês, gráfico mensal de receitas e despesas e links a partir de cada lançamento. A categoria "terceiro" não entra no total.
 - Projeção dos próximos meses: compromissos cadastrados mais a média dos gastos avulsos.
 - Gráficos de receitas × despesas por mês e de parcelas por mês.
@@ -121,7 +132,10 @@ Para ver o app com dados fictícios (parcelados, recorrentes, categorias e cart�
 
     cd financas
     PYTHONPATH=. FINANCAS_DB=./demo.db uv run python scripts/seed_demo.py
+    PYTHONPATH=. FINANCAS_DB=./demo.db uv run python scripts/seed_investimentos.py
     FINANCAS_DB=./demo.db uv run uvicorn app.main:app --port 8001
+
+O segundo comando cria cinco caixinhas de investimento fictícias, com histórico mensal. Se o banco já tiver caixinhas, ele não altera nada.
 
 Abra http://127.0.0.1:8001 no navegador.
 
@@ -155,10 +169,10 @@ O banco SQLite fica em /data/finance.db dentro do add-on e não é versionado. A
 - financas/DOCS.md: guia de uso mostrado dentro do Home Assistant.
 - financas/app/main.py: cria o app e inclui as telas.
 - financas/app/web.py: templates, filtros, prefixo do ingress e redirecionamento.
-- financas/app/routers/: rotas de cada tela (lançamentos, parcelados, importação, categorias, recorrentes, cartões e configurações).
-- financas/app/services/: regras de negócio (recorrentes, parcelados, importação de fatura, leitura do CSV do Nubank, cartões, projeção, resumo, gráficos, categorias e configurações).
+- financas/app/routers/: rotas de cada tela (lançamentos, parcelados, importação, categorias, recorrentes, cartões, investimentos e configurações).
+- financas/app/services/: regras de negócio (recorrentes, parcelados, importação de fatura, leitura do CSV do Nubank, cartões, investimentos, projeção, resumo, gráficos, categorias e configurações).
 - financas/app/templates/: telas em Jinja2.
-- financas/scripts/: utilitários de desenvolvimento, como o gerador de dados de demonstração.
+- financas/scripts/: utilitários de desenvolvimento, como os geradores de dados de demonstração (parcelados e caixinhas).
 - financas/scripts/demo/: faturas fictícias para testar a importação.
 - financas/tests/: testes automatizados.
 - financas/CHANGELOG.md: histórico de versões.
