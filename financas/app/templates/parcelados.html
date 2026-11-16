@@ -19,6 +19,11 @@
         'mes': 'Mês da parcela atual inválido. Nada foi cadastrado.'}.get(erro, 'Não foi possível cadastrar.') }}
   </div>
   {% endif %}
+  {% if criadas is not none %}
+  <div class="panel" style="border-color: #34d399;">
+    Importação concluída: {{ criadas }} compra(s) criada(s) e {{ atualizadas }} atualizada(s).
+  </div>
+  {% endif %}
 
   <section class="cards">
     <div class="card"><small>Saldo devedor total</small><div class="val bad">{{ saldo_total | brl }}</div></div>

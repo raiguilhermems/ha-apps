@@ -25,7 +25,13 @@ router = APIRouter()
 
 
 @router.get("/parcelados")
-def parcelados_page(request: Request, erro: str | None = None, session: Session = Depends(get_session)):
+def parcelados_page(
+    request: Request,
+    erro: str | None = None,
+    criadas: int | None = None,
+    atualizadas: int | None = None,
+    session: Session = Depends(get_session),
+):
     data = schedule_summaries(session)
     cards = session.exec(select(Account).where(Account.type == "cartao")).all()
     return templates.TemplateResponse(
@@ -37,6 +43,8 @@ def parcelados_page(request: Request, erro: str | None = None, session: Session 
             "cards": cards,
             "ref": current_month(),
             "erro": erro,
+            "criadas": criadas,
+            "atualizadas": atualizadas,
             "dia_padrao": int(get_setting(session, "dia_padrao")),
             "graficos": parcelas_mensal(session),
         },

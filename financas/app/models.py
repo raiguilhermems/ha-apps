@@ -88,6 +88,29 @@ class ImportacaoIgnorada(SQLModel, table=True):
     valor_cents: int
 
 
+class Investimento(SQLModel, table=True):
+    """Caixinha de investimento. O valor atual é o último registro do histórico."""
+
+    __tablename__ = "investimento"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nome: str
+    tipo: str = "outro"  # renda_fixa | renda_variavel | fundos | previdencia | outro
+    valor_cents: int = 0
+    atualizado_em: date
+
+
+class InvestimentoHistorico(SQLModel, table=True):
+    """Cada valor registrado para uma caixinha, com a data a que se refere."""
+
+    __tablename__ = "investimento_historico"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    investimento_id: int = Field(foreign_key="investimento.id")
+    data: date
+    valor_cents: int
+
+
 class Setting(SQLModel, table=True):
     __tablename__ = "setting"
 

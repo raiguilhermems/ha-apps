@@ -5,7 +5,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 
 from app.db import init_db
-from app.routers import cartoes, categorias, configuracoes, importacao, lancamentos, parcelados, recorrentes
+from app.routers import (
+    cartoes,
+    categorias,
+    configuracoes,
+    importacao,
+    investimentos,
+    lancamentos,
+    parcelados,
+    recorrentes,
+)
 from app.web import _prefixo
 
 
@@ -33,4 +42,5 @@ app.include_router(importacao.router)
 app.include_router(categorias.router)
 app.include_router(recorrentes.router)
 app.include_router(cartoes.router)
+app.include_router(investimentos.router)
 app.include_router(configuracoes.router)

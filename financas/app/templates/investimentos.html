@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Investimentos</title>
+  {% include "_style.html" %}
+</head>
+<body>
+{% include "_nav.html" %}
+<div class="wrap">
+  <h1>Investimentos</h1>
+  {% if erro %}
+  <div class="panel" style="border-color: var(--bad);">{{ erro }}</div>
+  {% endif %}
+
+  <section class="cards">
+    <div class="card"><small>Total investido</small><div class="val">{{ total | brl }}</div></div>
+    <div class="card"><small>Caixinhas</small><div class="val">{{ invs | length }}</div></div>
+  </section>
+
+  <h2>Evolução do total</h2>
+  <div class="panel">
+    {% if grafico.labels %}
+    <div style="position:relative;height:260px"><canvas id="chartInv"></canvas></div>
+    {% else %}
+    <p class="muted">Cadastre uma caixinha para ver a evolução.</p>
+    {% endif %}
+  </div>
+
+  <h2>Nova caixinha</h2>
+  <div class="panel">
+    <form class="grid" method="post" action="{{ base() }}/investimentos">
+      <label>Nome<input name="nome" required placeholder="Tesouro Selic"></label>
+      <label>Tipo
+        <select name="tipo">
+          {% for k, v in tipos.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Valor atual (R$)<input name="valor" placeholder="1.000,00" required></label>
+      <button type="submit" class="primary">Cadastrar</button>
+    </form>
+  </div>
+
+  <h2>Caixinhas</h2>
+  {% if invs %}
+  <table>
+    <thead><tr><th>Nome</th><th>Tipo</th><th>Valor atual</th><th>Atualizado em</th><th>Atualizar valor</th><th></th></tr></thead>
+    <tbody>
+    {% for i in invs %}
+    <tr>
+      <td><a href="{{ base() }}/investimentos/{{ i.id }}">{{ i.nome }}</a></td>
+      <td class="muted">{{ tipos.get(i.tipo, i.tipo) }}</td>
+      <td>{{ i.valor_cents | brl }}</td>
+      <td>{{ i.atualizado_em.strftime('%d/%m/%Y') }}</td>
+      <td>
+        <form class="inline" method="post" action="{{ base() }}/investimentos/{{ i.id }}/valor">
+          <input name="valor" placeholder="novo valor" required style="width:9rem">
+          <input type="date" name="data" value="{{ hoje }}" style="width:auto">
+          <button type="submit" class="small">Atualizar</button>
+        </form>
+      </td>
+      <td>
+        <form class="inline" method="post" action="{{ base() }}/investimentos/{{ i.id }}/excluir" onsubmit="return confirm('Excluir esta caixinha e todo o histórico dela?')">
+          <button type="submit" class="danger small">Excluir</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Nenhuma caixinha cadastrada.</p>
+  {% endif %}
+</div>
+
+{% if grafico.labels %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+Chart.defaults.color = '#9aa3b2';
+Chart.defaults.borderColor = '#2a2f3a';
+const reais = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const G = {{ grafico | tojson }};
+new Chart(document.getElementById('chartInv'), {
+  type: 'line',
+  data: {
+    labels: G.labels,
+    datasets: [{ label: 'Total investido', data: G.valores, borderColor: '#4f8cff', backgroundColor: 'rgba(79,140,255,0.15)', fill: true, tension: 0.25 }]
+  },
+  options: {
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: c => ' ' + reais(c.parsed.y) } }
+    },
+    scales: { y: { ticks: { callback: v => reais(v) } } }
+  }
+});
+</script>
+{% endif %}
+</body>
+</html>

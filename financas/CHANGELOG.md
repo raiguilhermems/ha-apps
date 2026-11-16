@@ -1,5 +1,11 @@
 # Changelog
 
+## Não lançada
+
+- Nova aba Investimentos: caixinhas com nome, tipo e valor atual, histórico de atualizações, gráfico de evolução do total e de cada caixinha. Sem vínculo com instituições.
+- Parcelados mostra o resultado da importação da fatura (compras criadas e atualizadas).
+- README com o roteiro do banco demonstração e dos arquivos de fatura de teste.
+- Script `scripts/seed_investimentos.py` gera caixinhas fictícias no banco demo.
 ## 0.0.15
 
 - Importação da fatura do Nubank (CSV) na aba Parcelados, com prévia antes de gravar.
