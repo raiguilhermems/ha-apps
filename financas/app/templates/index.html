@@ -50,8 +50,20 @@
 
   <h2>Novo lançamento</h2>
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/lancamentos">
-      <label>Descrição<input name="description" required></label>
+    <style>
+      form.novo-lancamento { grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: end; }
+      form.novo-lancamento .span2 { grid-column: span 2; }
+      form.novo-lancamento .span5 { grid-column: span 5; }
+      form.novo-lancamento input, form.novo-lancamento select { width: 100%; }
+      form.novo-lancamento button.primary { justify-self: end; height: 2.4rem; }
+      @media (max-width: 640px) {
+        form.novo-lancamento { grid-template-columns: 1fr !important; }
+        form.novo-lancamento .span2, form.novo-lancamento .span5 { grid-column: auto; }
+        form.novo-lancamento button.primary { justify-self: stretch; width: 100%; }
+      }
+    </style>
+    <form class="grid novo-lancamento" method="post" action="{{ base() }}/lancamentos">
+      <label class="span2">Descrição<input name="description" required></label>
       <label>Valor (R$)<input name="amount" placeholder="1.234,56" required></label>
       <label>Vencimento<input type="date" name="due_date" value="{{ today }}" required></label>
       <label>Tipo
@@ -61,7 +73,7 @@
         </select>
       </label>
       <label>Terceiros (R$, só despesa)<input name="third_party" placeholder="0,00"></label>
-      <label>Categorias (separadas por vírgula)<input name="tags" placeholder="mercado, terceiro"></label>
+      <label class="span5">Categorias (separadas por vírgula)<input name="tags" placeholder="mercado, terceiro"></label>
       <button type="submit" class="primary">Adicionar</button>
     </form>
   </div>
@@ -89,7 +101,7 @@
           {% for tg in tag_map.get(t.id, []) %}{% if tg.id is defined %}<a class="pill" href="{{ base() }}/categorias/{{ tg.id }}">{{ tg.name }}</a>{% else %}<span class="pill">{{ tg }}</span>{% endif %} {% endfor %}
         </td>
         <td class="valor">{{ t.amount_cents | brl }}</td>
-        <td>
+        <td class="status-col">
           {% if t.status == 'pago' %}
             <span class="pill ok">{{ 'recebido' if t.kind == 'receita' else 'pago' }}</span>
           {% elif atrasada %}

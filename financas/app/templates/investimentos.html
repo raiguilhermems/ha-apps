@@ -45,7 +45,7 @@
   <h2>Caixinhas</h2>
   {% if invs %}
   <table>
-    <thead><tr><th>Nome</th><th>Tipo</th><th>Valor atual</th><th>Atualizado em</th><th>Atualizar valor</th><th></th></tr></thead>
+    <thead><tr><th>Nome</th><th>Tipo</th><th>Valor atual</th><th>Atualizado em</th><th>Ações</th></tr></thead>
     <tbody>
     {% for i in invs %}
     <tr>
@@ -53,14 +53,12 @@
       <td class="muted">{{ tipos.get(i.tipo, i.tipo) }}</td>
       <td>{{ i.valor_cents | brl }}</td>
       <td>{{ i.atualizado_em.strftime('%d/%m/%Y') }}</td>
-      <td>
+      <td style="white-space: nowrap;">
         <form class="inline" method="post" action="{{ base() }}/investimentos/{{ i.id }}/valor">
           <input name="valor" placeholder="novo valor" required style="width:9rem">
           <input type="date" name="data" value="{{ hoje }}" style="width:auto">
           <button type="submit" class="small">Atualizar</button>
         </form>
-      </td>
-      <td>
         <form class="inline" method="post" action="{{ base() }}/investimentos/{{ i.id }}/excluir" onsubmit="return confirm('Excluir esta caixinha e todo o histórico dela?')">
           <button type="submit" class="danger small">Excluir</button>
         </form>

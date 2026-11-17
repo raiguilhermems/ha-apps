@@ -14,8 +14,20 @@
 
   <h2>Nova recorrência</h2>
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/recorrentes">
-      <label>Descrição<input name="description" required></label>
+    <style>
+      form.novo-recorrente { grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: end; }
+      form.novo-recorrente .span2 { grid-column: span 2; }
+      form.novo-recorrente .span4 { grid-column: span 4; }
+      form.novo-recorrente input, form.novo-recorrente select { width: 100%; }
+      form.novo-recorrente button.primary { justify-self: end; height: 2.4rem; }
+      @media (max-width: 640px) {
+        form.novo-recorrente { grid-template-columns: 1fr !important; }
+        form.novo-recorrente .span2, form.novo-recorrente .span4 { grid-column: auto; }
+        form.novo-recorrente button.primary { justify-self: stretch; width: 100%; }
+      }
+    </style>
+    <form class="grid novo-recorrente" method="post" action="{{ base() }}/recorrentes">
+      <label class="span2">Descrição<input name="description" required></label>
       <label>Valor (R$)<input name="amount" placeholder="1.234,56" required></label>
       <label>Vencimento
         <select name="day">
@@ -36,7 +48,7 @@
 </select>
 
       </label>
-      <label>Categorias (separadas por vírgula)<input name="categorias" placeholder="mercado, lazer"></label>
+      <label class="span4">Categorias (separadas por vírgula)<input name="categorias" placeholder="mercado, lazer"></label>
       <label class="check"><input type="checkbox" name="variable"> Valor variável (ex.: luz)</label>
       <button type="submit" class="primary">Adicionar</button>
     </form>
@@ -61,7 +73,7 @@
         {% if v.real is none %}<span class="muted">—</span>{% else %}{{ v.real | brl }}{% endif %}
         {% if v.divergente %}<span class="pill bad">valor diferente</span>{% endif %}
       </td>
-      <td>
+      <td class="status-col">
         {% if v.status == 'pago' %}<span class="pill ok">Pago</span>
         {% elif v.status == 'recebido' %}<span class="pill ok">Recebido</span>
         {% elif v.status == 'atrasado' %}<span class="pill bad">Atrasado</span>

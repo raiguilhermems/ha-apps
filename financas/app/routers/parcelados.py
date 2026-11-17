@@ -18,6 +18,7 @@ from app.services.parcelados import (
 )
 from app.services.cartoes import buscar_por_nome
 from app.services.settings import get_setting
+from app.routers.importacao import MESES
 from app.services.util import current_month, parse_brl
 from app.web import RedirectResponse, templates
 
@@ -34,6 +35,7 @@ def parcelados_page(
 ):
     data = schedule_summaries(session)
     cards = session.exec(select(Account).where(Account.type == "cartao")).all()
+    hoje = date.today()
     return templates.TemplateResponse(
         request,
         "parcelados.html",
@@ -42,6 +44,10 @@ def parcelados_page(
             "saldo_total": data["saldo_total"],
             "cards": cards,
             "ref": current_month(),
+            "meses": MESES,
+            "anos": list(range(hoje.year - 1, hoje.year + 3)),
+            "mes_atual_num": hoje.month,
+            "ano_atual": hoje.year,
             "erro": erro,
             "criadas": criadas,
             "atualizadas": atualizadas,
@@ -59,7 +65,8 @@ def create_installment(
     amount: str = Form(...),
     total: int = Form(...),
     current_n: int = Form(...),
-    current_ref: str = Form(...),
+    mes_num: str = Form(...),
+    ano: str = Form(...),
     due_day: int = Form(...),
     categorias: str = Form(""),
     session: Session = Depends(get_session),
@@ -75,7 +82,7 @@ def create_installment(
     if not 0 <= due_day <= 31:
         return RedirectResponse("/parcelados?erro=dia", status_code=303)
     try:
-        int(current_ref[:4]); int(current_ref[5:7])
+        current_ref = f"{int(ano):04d}-{int(mes_num):02d}"
     except ValueError:
         return RedirectResponse("/parcelados?erro=mes", status_code=303)
 
