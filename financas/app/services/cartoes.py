@@ -38,11 +38,17 @@ def _valida(nome: str, dia: int | None) -> str:
     return nome
 
 
-def criar(session: Session, nome: str, dia: int | None) -> Account:
+def validar_novo(session: Session, nome: str, dia: int | None) -> str:
+    """Valida um cartão que ainda não existe, sem gravar. Devolve o nome normalizado."""
     nome = _valida(nome, dia)
     existente = buscar_por_nome(session, nome)
     if existente:
         raise ValueError(f"Já existe o cartão {existente.name}")
+    return nome
+
+
+def criar(session: Session, nome: str, dia: int | None) -> Account:
+    nome = validar_novo(session, nome, dia)
     cartao = Account(name=nome, type="cartao", dia_pagamento=dia)
     session.add(cartao)
     session.flush()

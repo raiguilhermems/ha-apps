@@ -17,6 +17,7 @@
   <form method="post" action="{{ base() }}/parcelados/importar/confirmar">
     <input type="hidden" name="cartao" value="{{ cartao }}">
     <input type="hidden" name="vencimento" value="{{ vencimento.isoformat() }}">
+    {% if dia_novo %}<input type="hidden" name="dia_novo" value="{{ dia_novo }}">{% endif %}
 
     <div class="panel">
       <table>

@@ -9,7 +9,7 @@ from sqlmodel import Session
 
 from app.db import get_session
 from app.models import Account
-from app.services.cartoes import criar, listar, vencimento_fatura
+from app.services.cartoes import buscar_por_nome, criar, listar, validar_novo, vencimento_fatura
 from app.services.fatura_nubank import LinhaFatura, ler_fatura, limpa_nome
 from app.services.importacao import gravar, montar_previa
 from app.web import RedirectResponse, templates
@@ -27,7 +27,8 @@ def _volta(mensagem: str) -> RedirectResponse:
     return RedirectResponse(f"/parcelados/importar?erro={quote(mensagem)}", status_code=303)
 
 
-def _escolher_cartao(session: Session, cartao_id: str, novo_nome: str, novo_dia: str) -> Account:
+def _escolher_cartao(session: Session, cartao_id: str, novo_nome: str, novo_dia: str) -> tuple[str, int]:
+    """Devolve (nome, dia de pagamento) do cartão escolhido. Não grava nada no banco."""
     if cartao_id.strip():
         try:
             cartao = session.get(Account, int(cartao_id))
@@ -35,12 +36,13 @@ def _escolher_cartao(session: Session, cartao_id: str, novo_nome: str, novo_dia:
             cartao = None
         if cartao is None or cartao.type != "cartao":
             raise ValueError("Cartão não encontrado")
-        return cartao
+        if cartao.dia_pagamento is None:
+            raise ValueError("Este cartão não tem dia de pagamento. Edite-o na aba Cartões.")
+        return cartao.name, cartao.dia_pagamento
     if novo_nome.strip():
         dia = novo_dia.strip()
-        cartao = criar(session, novo_nome, int(dia) if dia else None)
-        session.commit()
-        return cartao
+        nome = validar_novo(session, novo_nome, int(dia) if dia else None)
+        return nome, int(dia)
     raise ValueError("Escolha um cartão da lista ou preencha os dados de um cartão novo")
 
 
@@ -81,19 +83,19 @@ async def importar_previa(
 
     try:
         mes = f"{int(ano):04d}-{int(mes_num):02d}"
-        cartao = _escolher_cartao(session, cartao_id, novo_nome, novo_dia)
-        if cartao.dia_pagamento is None:
-            raise ValueError("Este cartão não tem dia de pagamento. Edite-o na aba Cartões.")
-        vencimento = vencimento_fatura(mes, cartao.dia_pagamento)
+        nome_cartao, dia_pagamento = _escolher_cartao(session, cartao_id, novo_nome, novo_dia)
+        vencimento = vencimento_fatura(mes, dia_pagamento)
     except ValueError as e:
         session.rollback()
         return _volta(str(e))
 
-    previa = montar_previa(session, linhas, cartao.name)
+    previa = montar_previa(session, linhas, nome_cartao)
+    # Cartão novo só é gravado na confirmação; o dia vai junto para criá-lo lá.
+    dia_novo = dia_pagamento if not cartao_id.strip() else None
     return templates.TemplateResponse(
         request,
         "previa_fatura.html",
-        {"previa": previa, "cartao": cartao.name, "vencimento": vencimento},
+        {"previa": previa, "cartao": nome_cartao, "vencimento": vencimento, "dia_novo": dia_novo},
     )
 
 
@@ -104,6 +106,15 @@ async def importar_confirmar(request: Request, session: Session = Depends(get_se
     if not cartao:
         return _volta("Cartão não informado")
     vencimento = date.fromisoformat(str(form["vencimento"]))
+
+    dia_novo = str(form.get("dia_novo", "")).strip()
+    if dia_novo and buscar_por_nome(session, cartao) is None:
+        try:
+            criar(session, cartao, int(dia_novo))
+        except ValueError as e:
+            session.rollback()
+            return _volta(str(e))
+        session.commit()
 
     itens = []
     for i in form.getlist("indices"):

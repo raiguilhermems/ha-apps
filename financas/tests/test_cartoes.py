@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from app.services.cartoes import criar, excluir, listar, vencimento_fatura
+from app.services.cartoes import criar, excluir, listar, validar_novo, vencimento_fatura
 from app.services.parcelados import create_plan
 
 
@@ -41,4 +41,10 @@ def test_cartao_sem_vinculos_pode_ser_excluido(session):
     session.commit()
     excluir(session, cartao)
     session.commit()
+    assert listar(session) == []
+
+
+def test_validar_novo_nao_grava_cartao(session):
+    nome = validar_novo(session, "  Itaú  ", 5)
+    assert nome == "Itaú"
     assert listar(session) == []
