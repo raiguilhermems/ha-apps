@@ -1,6 +1,19 @@
 # Changelog
 
-## Não lançada
+## 0.0.17
+
+- Nova aba Investimentos: caixinhas com nome, tipo e valor atual, histórico de atualizações, gráfico de evolução do total e de cada caixinha. Sem vínculo com instituições.
+- Parcelados mostra o resultado da importação da fatura (compras criadas e atualizadas).
+- Script `scripts/seed_investimentos.py` gera caixinhas fictícias no banco demo.
+- Tabelas: cabeçalhos centralizados em todas as telas; valores centralizados, exceto a coluna Descrição, que fica à esquerda.
+- Início: removidas as cores verde e vermelha do texto da coluna Valor. As bordas coloridas à esquerda permanecem. Status com primeira letra maiúscula.
+- Recorrentes: faixa colorida à esquerda das linhas (verde para receita, vermelho para despesa), igual ao Início.
+- Botões de ações padronizados e espaçados igualmente em Início, Recorrentes e Categorias.
+- Categorias: os três botões de ações ficam em uma única coluna, na mesma linha.
+- Cartões: campo de dia de pagamento menor, com o botão Cadastrar na mesma linha.
+
+
+## 0.0.16
 
 - Nova aba Investimentos: caixinhas com nome, tipo e valor atual, histórico de atualizações, gráfico de evolução do total e de cada caixinha. Sem vínculo com instituições.
 - Parcelados mostra o resultado da importação da fatura (compras criadas e atualizadas).
