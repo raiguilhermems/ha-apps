@@ -9,7 +9,9 @@
     .import-form { display: flex; flex-wrap: wrap; gap: 1rem 1.25rem; align-items: flex-end; }
     .import-form label { display: flex; flex-direction: column; gap: .35rem; flex: 1 1 14rem; min-width: 0; }
     .import-form input { width: 100%; box-sizing: border-box; }
-    .import-form .acao { flex: 1 1 100%; display: flex; justify-content: flex-end; }
+    .import-form .acao { flex: 0 0 auto; display: flex; justify-content: flex-end; }
+    .import-form label.campo-dia { flex: 0 0 11rem; }
+    .import-form .campo-dia input { width: 6rem; }
     .linha-cartao { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
     .linha-cartao input[name="nome"] { flex: 1 1 14rem; min-width: 0; }
     .linha-cartao input[name="dia"] { width: 5rem; }
@@ -27,8 +29,8 @@
   <h2>Novo cartão</h2>
   <div class="panel">
     <form class="import-form" method="post" action="{{ base() }}/cartoes">
-      <label>Nome do cartão<input name="nome" required placeholder="Nubank"></label>
-      <label>Dia de pagamento da fatura<input name="dia" type="number" min="1" max="31" required placeholder="5"></label>
+      <label class="campo-nome">Nome do cartão<input name="nome" required placeholder="Nubank"></label>
+      <label class="campo-dia">Dia de pagamento da fatura<input name="dia" type="number" min="1" max="31" required placeholder="5"></label>
       <div class="acao"><button type="submit" class="primary">Cadastrar</button></div>
     </form>
   </div>

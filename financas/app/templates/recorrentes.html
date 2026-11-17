@@ -65,8 +65,8 @@
     <thead><tr><th>Descrição</th><th>Tipo</th><th>Esperado</th><th>Lançado</th><th>Status</th></tr></thead>
     <tbody>
     {% for v in verif %}
-    <tr>
-      <td>{{ v.descricao }}</td>
+    <tr class="linha-{{ v.tipo }}">
+      <td class="desc">{{ v.descricao }}</td>
       <td class="muted">{{ 'Despesa' if v.tipo == 'despesa' else 'Receita' }}</td>
       <td>{{ v.esperado | brl }}{% if v.variavel %} <span class="pill">variável</span>{% endif %}</td>
       <td>
@@ -94,9 +94,9 @@
   <table>
     <thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Dia</th><th>Cartão</th><th>Situação</th><th>Ações</th></tr></thead>
     <tbody>
-    {% for r in rows %}
-    <tr>
-      <td>{{ r.rule.description }}
+        {% for r in rows %}
+    <tr class="linha-{{ r.rule.kind }}">
+      <td class="desc">{{ r.rule.description }}
         {% for c in r.cats %}{% if c.id %}<a class="pill" href="{{ base() }}/categorias/{{ c.id }}">{{ c.nome }}</a>{% else %}<span class="pill">{{ c.nome }}</span>{% endif %}{% endfor %}</td>
       <td class="muted">{{ 'Despesa' if r.rule.kind == 'despesa' else 'Receita' }}</td>
       <td>
@@ -107,13 +107,15 @@
       <td>{% if r.cartao != '—' %}<span class="pill">{{ r.cartao }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
       <td>{% if r.rule.active %}<span class="pill ok">Ativa</span>{% else %}<span class="pill">Pausada</span>{% endif %}</td>
       <td>
-        <a class="btn small" href="{{ base() }}/recorrentes/{{ r.rule.id }}/editar">Editar</a>
-        <form class="inline" method="post" action="{{ base() }}/recorrentes/{{ r.rule.id }}/ativar">
-          <button type="submit" class="small">{{ 'Pausar' if r.rule.active else 'Ativar' }}</button>
-        </form>
-        <form class="inline" method="post" action="{{ base() }}/recorrentes/{{ r.rule.id }}/excluir" onsubmit="return confirm('Excluir esta recorrência? Os lançamentos futuros pendentes serão apagados.')">
-          <button type="submit" class="small danger">Excluir</button>
-        </form>
+        <div class="acoes-grupo">
+          <a class="btn small" href="{{ base() }}/recorrentes/{{ r.rule.id }}/editar">Editar</a>
+          <form class="inline" method="post" action="{{ base() }}/recorrentes/{{ r.rule.id }}/ativar">
+            <button type="submit" class="small">{{ 'Pausar' if r.rule.active else 'Ativar' }}</button>
+          </form>
+          <form class="inline" method="post" action="{{ base() }}/recorrentes/{{ r.rule.id }}/excluir" onsubmit="return confirm('Excluir esta recorrência? Os lançamentos futuros pendentes serão apagados.')">
+            <button type="submit" class="small danger">Excluir</button>
+          </form>
+        </div>
       </td>
     </tr>
     {% endfor %}

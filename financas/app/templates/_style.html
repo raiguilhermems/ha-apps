@@ -226,8 +226,25 @@
     .panel table td:last-child a.btn { width: auto; padding: .3rem .6rem; font-size: .8rem; }
   }
 
-  /* Cabeçalhos e valores centralizados nas tabelas */
-  .panel table th, .panel table td { text-align: center; }
+  /* Cabeçalhos e valores centralizados em todas as tabelas */
+  table th, table td { text-align: center; }
+  /* Exceção: valores da coluna Descrição alinhados à esquerda */
+  td.desc { text-align: left; }
+
+  /* Grupo de botões da coluna Ações, com espaçamento uniforme */
+  .acoes-grupo {
+    display: flex; justify-content: center; align-items: center;
+    flex-wrap: wrap; gap: .4rem;
+  }
+  .acoes-grupo form,
+.acoes-grupo form.inline,
+.panel .acoes-grupo form.inline {
+  margin: 0 !important;
+  display: flex;
+}
+
+  /* Status com a mesma fonte dos botões pequenos da coluna Ações */
+  td.status-col .pill { font-size: .75rem; }
 
   /* Checkbox com rótulo colado no campo */
   label.check { display: inline-flex; align-items: center; gap: .5rem; justify-self: start; width: auto; }
@@ -240,4 +257,11 @@
   /* Caixinhas que são links */
   a.pill { text-decoration: none; }
   a.pill:hover { border-color: var(--accent, #4f8cff); color: var(--accent, #4f8cff); }
+  /* Faixa colorida à esquerda das linhas: verde para receita, vermelho para despesa */
+tr.linha-receita td:first-child { box-shadow: inset 4px 0 0 #34d399; }
+tr.linha-despesa td:first-child { box-shadow: inset 4px 0 0 #f87171; }
+/* Colunas estreitas: ocupam só o espaço do conteúdo */
+th.col-estreita, td.col-estreita { width: 1%; white-space: nowrap; }
+/* Grupo de ações em linha única dentro de uma célula estreita */
+td.col-estreita .acoes-grupo { flex-wrap: nowrap; }
 </style>

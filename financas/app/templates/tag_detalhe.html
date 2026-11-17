@@ -38,7 +38,7 @@
     {% for r in rows %}
     <tr>
       <td>{{ r.tx.due_date.strftime('%d/%m') }}</td>
-      <td>{{ r.tx.description }}</td>
+      <td class="desc">{{ r.tx.description }}</td>
       <td class="muted">{{ r.conta }}</td>
       <td class="muted">{{ 'Despesa' if r.tx.kind == 'despesa' else 'Receita' }}</td>
       <td style="color: {{ '#34d399' if r.tx.kind == 'receita' else '#f87171' }}">{{ r.tx.amount_cents | brl }}</td>
