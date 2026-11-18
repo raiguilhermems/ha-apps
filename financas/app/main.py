@@ -1,5 +1,6 @@
 """Aplicação FastAPI: monta as telas (routers) e o prefixo do ingress do Home Assistant."""
 
+import re
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -27,9 +28,18 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="Finanças", lifespan=lifespan)
 
 
+PADRAO_INGRESS = re.compile(r"/api/hassio_ingress/[A-Za-z0-9_-]+")
+
+
+def _prefixo_ingress(valor: str) -> str:
+    """Aceita só o caminho do ingress do Home Assistant. Qualquer outro valor vira vazio."""
+    valor = valor.rstrip("/")
+    return valor if PADRAO_INGRESS.fullmatch(valor) else ""
+
+
 @app.middleware("http")
 async def ingress_prefixo(request: Request, call_next):
-    token = _prefixo.set(request.headers.get("x-ingress-path", "").rstrip("/"))
+    token = _prefixo.set(_prefixo_ingress(request.headers.get("x-ingress-path", "")))
     try:
         return await call_next(request)
     finally:

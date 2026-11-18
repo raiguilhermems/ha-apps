@@ -54,7 +54,7 @@
           {% if vinculos[c.id] %}
             <span class="pill">com parcelamentos ou recorrentes</span>
           {% else %}
-            <form class="inline" method="post" action="{{ base() }}/cartoes/{{ c.id }}/excluir" onsubmit="return confirm('Excluir o cartão {{ c.name }}?')">
+            <form class="inline" method="post" action="{{ base() }}/cartoes/{{ c.id }}/excluir" data-nome="{{ c.name }}" onsubmit="return confirm('Excluir o cartão ' + this.dataset.nome + '?')">
               <button type="submit" class="danger small">Excluir</button>
             </form>
           {% endif %}

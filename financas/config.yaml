@@ -1,5 +1,5 @@
 name: Finanças
-version: "0.0.18"
+version: "0.0.19"
 slug: financas
 description: Controle financeiro pessoal local com gestão de receitas, despesas, parcelados, importação de fatura Nubank, cartões e investimentos.
 arch:

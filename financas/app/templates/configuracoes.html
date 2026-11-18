@@ -14,6 +14,10 @@
   <div class="panel" style="border-color: var(--bad);">
     Para apagar, digite APAGAR exatamente como está. Nada foi apagado.
   </div>
+  {% elif erro == 'tamanho' %}
+  <div class="panel" style="border-color: var(--bad);">
+    O arquivo passa do limite de 50 MB. Nada foi importado.
+  </div>
   {% elif erro == 'arquivo' %}
   <div class="panel" style="border-color: var(--bad);">
     O arquivo escolhido não é um banco válido. Nada foi importado.

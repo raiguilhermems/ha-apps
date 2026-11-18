@@ -1,195 +1,96 @@
 # Finanças
 
-Controle financeiro pessoal, autohospedado, rodando como add-on do Home Assistant. Acesso pelo painel lateral do Home Assistant (ingress), sem login próprio.
+Controle financeiro pessoal para o Home Assistant. Roda como add-on, guarda os dados localmente em SQLite e abre pelo painel lateral do Home Assistant.
+
+## Funcionalidades
+
+- Receitas e despesas por mês, pela data de vencimento
+- Recorrentes com valor fixo ou variável
+- Parcelados de cartão, boleto, carnê ou financiamento
+- Importação da fatura do Nubank (CSV), com prévia antes de gravar
+- Cartões com dia de pagamento
+- Categorias com relatório mensal
+- Investimentos com histórico e gráfico de evolução
+- Backup e importação do banco pela própria interface
 
 ## Telas
 
-### Início
+| | |
+|---|---|
+| ![Início](docs/inicio.png) | ![Parcelados](docs/parcelados.png) |
+| ![Recorrentes](docs/recorrentes.png) | ![Categorias](docs/categorias.png) |
+| ![Cartões](docs/cartoes.png) | ![Investimentos](docs/investimentos.png) |
 
-Visão do mês escolhido: totais de receitas, despesas, saldo e o que já foi pago ou ainda falta pagar. Os lançamentos aparecem com as receitas primeiro e as despesas depois, cada grupo com o seu total. Também mostra os atrasados e um gráfico de receitas × despesas.
+<details>
+<summary>Mais capturas</summary>
 
----
+![Início, outra visão](docs/inicio1.png)
+![Parcelados, outra visão](docs/parcelados1.png)
+![Importação da fatura](docs/importar.png)
+![Prévia da primeira importação](docs/importar1.png)
+![Prévia do mês seguinte](docs/importar2.png)
+![Detalhe de uma caixinha](docs/investimento_detalhe.png)
+![Configurações](docs/configuracoes.png)
 
-### Parcelados
-
-Todos os parcelamentos em andamento, com a forma de pagamento, o cartão (quando houver), as categorias e o saldo que ainda falta pagar. Traz um gráfico com o total de parcelas por mês e o formulário para cadastrar um novo parcelamento. O cartão é escolhido na lista de cartões cadastrados.
-
-#### Importar fatura do Nubank
-
-Pela aba Parcelados, o botão **Importar fatura** lê o CSV da fatura do Nubank e cria os parcelamentos das compras parceladas. Antes de gravar, mostra uma prévia:
-
-- compras novas, marcadas para entrar;
-- compras que já estão cadastradas (com o nome que você deu a elas), que são puladas por padrão, mas podem ser atualizadas;
-- compras ignoradas em importações anteriores, para não voltarem a aparecer sem você querer.
-
-Pagamentos e estornos são ignorados. O mês da fatura é escolhido em uma lista de mês e ano, já preenchida com o mês atual, e o vencimento sai do dia de pagamento cadastrado no cartão.
-
----
-
-### Recorrentes
-
-Regras mensais, como salário, aluguel e assinaturas. A tabela de verificação mostra, mês a mês, se cada regra já foi lançada, paga ou recebida, e avisa quando o valor real é diferente do previsto.
-
----
-
-### Categorias
-
-Lista das categorias usadas nos lançamentos. Ao abrir uma categoria, você vê os lançamentos dela no mês escolhido e um gráfico com a evolução mensal de receitas e despesas dela.
-
----
-
-### Cartões
-
-Cadastro dos cartões, com o dia de pagamento da fatura (por exemplo, dia 5). Se o dia cair em fim de semana, o vencimento passa para o próximo dia útil. Os cartões cadastrados aparecem nas listas de Parcelados, Recorrentes e na importação da fatura. Um cartão que tem parcelamentos ou recorrentes vinculados não pode ser excluído.
-
----
-
-### Investimentos
-
-Caixinhas de investimento cadastradas à mão, sem ligação com bancos, corretoras ou APIs. Cada caixinha tem nome, tipo (renda fixa, renda variável, fundos, previdência ou outro) e valor atual. Ao atualizar o valor, o histórico guarda a data e a variação em relação ao registro anterior. A tela mostra o total investido e a evolução ao longo do tempo; cada caixinha tem o seu próprio gráfico e tabela de histórico.
-
----
-
-### Configurações
-
-Vencimento padrão dos lançamentos, backup e importação do banco, e a opção de apagar todos os dados.
-
-## O que faz
-
-- Lançamentos de receitas e despesas por mês, pela data de vencimento (regime de caixa).
-- No mês, receitas aparecem primeiro, depois despesas, cada grupo com o seu total. Receitas em verde e despesas em vermelho.
-- Saldo do mês em verde quando positivo e em vermelho quando negativo.
-- Despesas com valor de terceiros: a parte que não é sua sai do total.
-- Recorrentes: regras mensais que geram lançamentos nos próximos 12 meses. Podem ter valor fixo ou variável (estimativa, ajustada mês a mês) e categorias.
-- Vencimento padrão configurável, com a opção de 1º dia útil (segunda a sexta, sem feriados).
-- Parcelados: boleto, carnê, financiamento ou cartão, com categorias. Parcelas de cartão ficam só na aba Parcelados.
-- Importação da fatura do Nubank (CSV), com prévia antes de gravar, reconhecimento de compras já cadastradas e de compras ignoradas.
-- Cadastro de cartões com dia de pagamento, escolhidos por lista nos formulários.
-- Investimentos: caixinhas com tipo e valor atual, histórico de atualizações e gráfico de evolução. Sem vínculo externo.
-- Categorias, com filtro por mês, gráfico mensal de receitas e despesas e links a partir de cada lançamento. A categoria "terceiro" não entra no total.
-- Gráficos de receitas × despesas por mês e de parcelas por mês.
-- Configurações: vencimento padrão, backup, importação e apagar dados.
-
-## Últimas versões
-
-- **0.0.18**: sem projeção no início; rótulo com a soma dos últimos 6 meses por categoria; recorrentes de cartão usam o dia do cartão; receitas antes das despesas nas recorrentes; botões padronizados.
-- **0.0.17**: ajustes de layout nas tabelas e nos botões de ação; aba Investimentos com ajustes de tela.
-- **0.0.16**: aba Investimentos, com caixinhas, tipo, valor atual, histórico de atualizações e gráficos de evolução; Parcelados mostra o resultado da importação da fatura.
-- **0.0.15**: importação da fatura do Nubank com prévia; cadastro de cartões com dia de pagamento; cartão escolhido por lista nos formulários.
-- **0.0.14**: navbar com rolagem no celular e lançamentos em linha única no celular.
-- **0.0.13**: início com receitas e despesas separadas e cores por tipo; categorias clicáveis no início; gráfico mensal por categoria.
-- **0.0.12**: remoção do código legado de faturas e textos de categorias.
-
-Histórico completo em [CHANGELOG completo](financas/CHANGELOG.md).
+</details>
 
 ## Instalação no Home Assistant
 
-1. Vá em Configurações → Apps → Loja → menu ⋮ → Repositórios.
-2. Adicione o endereço deste repositório.
-3. Instale o Finanças, inicie e ative "Mostrar na barra lateral".
+1. Em **Configurações → Apps → Loja**, abra o menu ⋮ e clique em **Repositórios**.
+2. Adicione `https://github.com/raiguilhermems/ha-apps`.
+3. Instale **Finanças**, inicie e ative **Mostrar na barra lateral**.
 
-**Atualizando:** antes de atualizar, baixe um backup pela aba Configurações. A versão 0.0.18 não altera a estrutura do banco.
+Antes de atualizar, baixe um backup em **Configurações**.
 
-## Rodar localmente (desenvolvimento)
+## Desenvolvimento
 
-Requisitos: uv e Python 3.15 (ou outra versão compatível com as dependências).
+Requisito: [uv](https://docs.astral.sh/uv/).
 
-    cd financas
-    uv venv --python 3.15
-    uv pip install -r requirements.txt
-    FINANCAS_DB=./finance-dev.db uv run uvicorn app.main:app --reload
+```bash
+cd financas
+uv venv
+uv pip install -r requirements.txt -r requirements-dev.txt
+FINANCAS_DB=./finance-dev.db uv run uvicorn app.main:app --reload
+```
 
-Abra http://127.0.0.1:8000 no navegador. O banco de teste fica em finance-dev.db, separado de qualquer banco real.
+A aplicação fica em http://127.0.0.1:8000.
+
+Testes:
+
+```bash
+uv run pytest -v
+```
+
+Os testes usam um banco temporário e não tocam no banco de desenvolvimento.
 
 ### Banco de demonstração
 
-Para ver o app com dados fictícios (parcelados, recorrentes, categorias e cartões), gere o banco demo e suba o servidor nele:
+```bash
+cd financas
+PYTHONPATH=. FINANCAS_DB=./demo.db uv run python scripts/seed_demo.py
+PYTHONPATH=. FINANCAS_DB=./demo.db uv run python scripts/seed_investimentos.py
+FINANCAS_DB=./demo.db uv run uvicorn app.main:app --port 8001
+```
 
-    cd financas
-    PYTHONPATH=. FINANCAS_DB=./demo.db uv run python scripts/seed_demo.py
-    PYTHONPATH=. FINANCAS_DB=./demo.db uv run python scripts/seed_investimentos.py
-    FINANCAS_DB=./demo.db uv run uvicorn app.main:app --port 8001
-
-O segundo comando cria cinco caixinhas de investimento fictícias, com histórico mensal. Se o banco já tiver caixinhas, ele não altera nada.
-
-Abra http://127.0.0.1:8001 no navegador.
-
-Para testar a importação de fatura com dados fictícios, os arquivos de exemplo estão em `financas/scripts/demo/`:
-
-- `fatura_nov.csv`: primeira fatura. Tem compras parceladas, um pagamento e um estorno (que são ignorados).
-- `fatura_dez.csv`: fatura do mês seguinte, com as mesmas compras com a parcela avançada e uma compra nova.
-
-Roteiro sugerido:
-
-1. Cadastre um cartão em **Cartões**, com dia de pagamento.
-2. Em **Parcelados → Importar fatura**, envie o `fatura_nov.csv`. Desmarque uma compra na prévia (por exemplo, "Academia Teste") e grave.
-3. Importe o `fatura_dez.csv`. A prévia mostra as compras já cadastradas e a compra desmarcada como ignorada.
-
-Para rodar os testes automatizados:
-
-    cd financas
-    uv pip install -r requirements-dev.txt
-    uv run pytest -v
-
-Os testes usam um banco temporário e nunca tocam no banco de desenvolvimento.
-
-## Dados
-
-O banco SQLite fica em /data/finance.db dentro do add-on e não é versionado. Antes de atualizar ou apagar qualquer coisa, baixe um backup pela aba Configurações.
+Os arquivos de fatura fictícia para testar a importação estão em `financas/scripts/demo/`.
 
 ## Estrutura
 
-- financas/config.yaml: configuração do add-on (versão, ingress, ícone).
-- financas/Dockerfile: imagem do add-on.
-- financas/DOCS.md: guia de uso mostrado dentro do Home Assistant.
-- financas/app/main.py: cria o app e inclui as telas.
-- financas/app/web.py: templates, filtros, prefixo do ingress e redirecionamento.
-- financas/app/routers/: rotas de cada tela (lançamentos, parcelados, importação, categorias, recorrentes, cartões, investimentos e configurações).
-- financas/app/services/: regras de negócio (recorrentes, parcelados, importação de fatura, leitura do CSV do Nubank, cartões, investimentos, resumo, gráficos, categorias e configurações).
-- financas/app/templates/: telas em Jinja2.
-- financas/scripts/: utilitários de desenvolvimento, como os geradores de dados de demonstração (parcelados e caixinhas).
-- financas/scripts/demo/: faturas fictícias para testar a importação.
-- financas/tests/: testes automatizados.
-- financas/CHANGELOG.md: histórico de versões.
+```
+financas/
+├── app/
+│   ├── routers/     uma rota por tela
+│   ├── services/    regras de negócio
+│   └── templates/   telas (Jinja2)
+├── scripts/         dados de demonstração
+└── tests/           testes automatizados
+```
 
-## Capturas de tela
+## Dados
 
-### Início
+O banco fica em `/data/finance.db` dentro do add-on e não é criptografado. Backups podem ter até 50 MB.
 
-![Início](docs/inicio.png)
+## Documentação
 
-![Início, outra visão](docs/inicio1.png)
-
-### Parcelados
-
-![Parcelados](docs/parcelados.png)
-
-![Parcelados, outra visão](docs/parcelados1.png)
-
-![Tela inicial da importação](docs/importar.png)
-
-![Prévia da primeira importação](docs/importar1.png)
-
-![Prévia da importação do mês seguinte, com compras novas, já cadastradas e ignoradas](docs/importar2.png)
-
-### Recorrentes
-
-![Recorrentes](docs/recorrentes.png)
-
-### Categorias
-
-![Detalhamento de uma categoria](docs/categorias.png)
-
-### Cartões
-
-![Cartões](docs/cartoes.png)
-
-### Investimentos
-
-![Investimentos](docs/investimentos.png)
-
-![Detalhe de uma caixinha](docs/investimento_detalhe.png)
-
-### Configurações
-
-![Configurações](docs/configuracoes.png)
+- [Guia de uso](financas/DOCS.md)
+- [Changelog](financas/CHANGELOG.md)

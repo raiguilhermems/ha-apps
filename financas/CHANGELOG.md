@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.19
+
+- Segurança: o nome do cartão não entra mais no código JavaScript da confirmação de exclusão.
+- Segurança: a importação de backup aceita arquivos de até 50 MB, confere se o arquivo é um banco deste app antes de substituir os dados e lê o arquivo por partes.
+- Segurança: o caminho do ingress do Home Assistant é validado antes de ser usado em redirecionamentos.
+- README reduzido e reorganizado.
+- Novos testes para o prefixo do ingress e para a validação do backup.
+- Sem mudança na estrutura do banco.
+
 ## 0.0.18
 
 - Início: removida a projeção dos próximos meses.

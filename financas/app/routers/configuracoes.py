@@ -1,7 +1,10 @@
 """Configurações: vencimento padrão, backup, importação e apagar dados."""
 
+import os
 import shutil
+import sqlite3
 from datetime import date
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
@@ -12,6 +15,30 @@ from app.services.settings import get_setting, set_setting
 from app.web import RedirectResponse, templates
 
 router = APIRouter()
+
+CABECALHO_SQLITE = b"SQLite format 3\x00"
+TAMANHO_MAXIMO_BACKUP = 50 * 1024 * 1024  # 50 MB
+TABELAS_OBRIGATORIAS = {"account", "transacao"}
+
+
+def _banco_valido(caminho: Path) -> bool:
+    """Confere se o arquivo é um banco SQLite deste app. Abre só para leitura."""
+    with caminho.open("rb") as f:
+        if f.read(len(CABECALHO_SQLITE)) != CABECALHO_SQLITE:
+            return False
+    try:
+        con = sqlite3.connect(f"{caminho.resolve().as_uri()}?mode=ro", uri=True)
+    except sqlite3.Error:
+        return False
+    try:
+        tabelas = {linha[0] for linha in con.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        if not TABELAS_OBRIGATORIAS <= tabelas:
+            return False
+        return con.execute("PRAGMA quick_check").fetchone()[0] == "ok"
+    except sqlite3.Error:
+        return False
+    finally:
+        con.close()
 
 
 @router.get("/configuracoes")
@@ -36,14 +63,25 @@ def baixar_backup():
 
 @router.post("/configuracoes/importar")
 async def importar_backup(arquivo: UploadFile = File(...)):
-    conteudo = await arquivo.read()
-    if not conteudo.startswith(b"SQLite format 3\x00"):
-        return RedirectResponse("/configuracoes?erro=arquivo", status_code=303)
-    engine.dispose()
-    if DB_PATH.exists():
-        shutil.copyfile(DB_PATH, DB_PATH.with_name("finance-antes-da-importacao.db"))
-    DB_PATH.write_bytes(conteudo)
-    init_db()
+    temporario = DB_PATH.with_name("finance-importacao.tmp")
+    try:
+        # Grava por partes em arquivo temporário, sem carregar tudo na memória
+        with temporario.open("wb") as destino:
+            tamanho = 0
+            while bloco := await arquivo.read(1024 * 1024):
+                tamanho += len(bloco)
+                if tamanho > TAMANHO_MAXIMO_BACKUP:
+                    return RedirectResponse("/configuracoes?erro=tamanho", status_code=303)
+                destino.write(bloco)
+        if not _banco_valido(temporario):
+            return RedirectResponse("/configuracoes?erro=arquivo", status_code=303)
+        engine.dispose()
+        if DB_PATH.exists():
+            shutil.copyfile(DB_PATH, DB_PATH.with_name("finance-antes-da-importacao.db"))
+        os.replace(temporario, DB_PATH)
+        init_db()
+    finally:
+        temporario.unlink(missing_ok=True)
     return RedirectResponse("/configuracoes", status_code=303)
 
 
