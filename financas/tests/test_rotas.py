@@ -45,7 +45,6 @@ ROTAS_ESPERADAS = {
     ("GET", "/configuracoes/backup"),
     ("POST", "/configuracoes/importar"),
     ("POST", "/configuracoes/apagar"),
-    ("POST", "/configuracoes/projecao"),
     ("POST", "/configuracoes/dia_padrao"),
 }
 

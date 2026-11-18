@@ -4,11 +4,13 @@ Painel de finanças pessoais. Abra pela barra lateral do Home Assistant.
 
 ## Visão geral das telas
 
-- **Início:** o mês em exibição. Mostra o resumo, a lista de lançamentos, o gráfico de receitas × despesas e a projeção.
+- **Início:** o mês em exibição. Mostra o resumo, a lista de lançamentos e o gráfico de receitas × despesas.
 - **Parcelados:** compras parceladas, com o cronograma de cada uma e o saldo devedor.
 - **Recorrentes:** regras mensais (aluguel, assinaturas, luz) que geram lançamentos automaticamente.
 - **Categorias:** agrupam lançamentos (mercado, luz, lazer). Também servem para marcar o que não entra no total.
-- **Configurações:** vencimento padrão, projeção, backup e apagar dados.
+- **Cartões:** cadastro dos cartões com o dia de pagamento da fatura.
+- **Investimentos:** caixinhas com valor atual e histórico, sem vínculo com bancos.
+- **Configurações:** vencimento padrão, backup e apagar dados.
 
 ## Início
 
@@ -39,6 +41,8 @@ A tabela **Verificação do mês** mostra, para cada regra, se o lançamento do 
 
 Regras vinculadas a cartão não aparecem no Início. O valor delas já está na fatura do cartão.
 
+Quando você escolhe um cartão, o campo de vencimento some e a regra usa o dia de pagamento cadastrado no cartão.
+
 ## Parcelados
 
 Cadastre a compra com a descrição, a forma de pagamento, o valor de cada parcela, o total de parcelas e em qual parcela você está.
@@ -54,13 +58,21 @@ Crie categorias como mercado, luz ou lazer. Cada lançamento pode ter mais de um
 
 - **Não soma no total:** marque para categorias que não devem entrar no total do mês, como a categoria "terceiro".
 - **Ver lançamentos:** mostra tudo que tem aquela categoria no mês que está em exibição.
+- **Resumo dos 6 meses:** o rótulo acima do gráfico soma receitas e despesas dos 6 meses terminando no mês em exibição.
 - **Editar:** muda o nome ou a regra de soma.
 - **Excluir:** remove a categoria dos lançamentos que a usavam. Os lançamentos continuam.
+
+## Cartões
+
+Cadastre cada cartão com o dia de pagamento da fatura. Se o dia cair em fim de semana, o vencimento passa para o próximo dia útil. Cartões com parcelamentos ou recorrentes vinculados não podem ser excluídos.
+
+## Investimentos
+
+Cadastre caixinhas com nome, tipo e valor atual. Ao atualizar o valor, o histórico guarda a data e a variação em relação ao registro anterior. O gráfico mostra a evolução do total. Os valores são digitados à mão.
 
 ## Configurações
 
 - **Vencimento padrão:** valor sugerido nos formulários de recorrentes e parcelados. Escolha **1º dia útil** ou um dia do mês. O 1º dia útil considera segunda a sexta, sem feriados.
-- **Projeção:** quantos meses aparecem na projeção do Início, de 1 a 12. A projeção soma os compromissos cadastrados com a média dos gastos avulsos dos últimos 3 meses. É uma estimativa, não um saldo garantido.
 - **Baixar backup:** gera um arquivo com todos os dados. Use antes de atualizar o app ou apagar algo.
 - **Importar backup:** substitui todos os dados atuais pelos do arquivo escolhido. Antes, o app guarda uma cópia do banco atual.
 - **Apagar tudo:** apaga lançamentos, recorrentes, parcelados, categorias e cartões. Só executa se você digitar APAGAR exatamente como está. Não pode ser desfeito.

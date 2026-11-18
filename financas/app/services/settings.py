@@ -4,7 +4,7 @@ from sqlmodel import Session
 
 from app.models import Setting
 
-DEFAULTS = {"projecao_meses": "3", "dia_padrao": "10"}
+DEFAULTS = {"dia_padrao": "10"}
 
 
 def get_setting(session: Session, key: str) -> str:

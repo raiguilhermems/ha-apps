@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.0.18
+
+- Início: removida a projeção dos próximos meses.
+- Configurações: removida a seção Projeção, que só controlava o horizonte da projeção.
+- Botões com tamanho único em todas as telas. Ações em linha única nas tabelas.
+- Parcelados e importação da fatura: rótulos "Mês ano da parcela atual" e "Mês ano da fatura".
+- Recorrentes: receitas listadas antes das despesas, na tabela de regras e na verificação do mês.
+- Recorrentes de cartão usam o dia de pagamento cadastrado no cartão, em vez do dia escolhido no formulário.
+- Recorrentes: valor variável centralizado verticalmente.
+- Categorias: rótulo acima do gráfico com a soma de receitas e despesas dos últimos 6 meses, até o mês em exibição.
+- Investimentos: nome da caixinha sem quebra de linha; campo de valor atualizado e data mais compactos.
+- Código: removidos imports e chaves duplicadas em categorias e no início.
+- Sem mudança na estrutura do banco.
+
 ## 0.0.17
 
 - Nova aba Investimentos: caixinhas com nome, tipo e valor atual, histórico de atualizações, gráfico de evolução do total e de cada caixinha. Sem vínculo com instituições.

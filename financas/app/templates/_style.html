@@ -264,4 +264,28 @@ tr.linha-despesa td:first-child { box-shadow: inset 4px 0 0 #f87171; }
 th.col-estreita, td.col-estreita { width: 1%; white-space: nowrap; }
 /* Grupo de ações em linha única dentro de uma célula estreita */
 td.col-estreita .acoes-grupo { flex-wrap: nowrap; }
+
+  /* Tamanho único dos botões em todas as telas */
+  button, a.btn, button.small, a.small, .btn.small,
+  td button.small, td a.small, td .btn.small {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    height: 2rem !important;
+    min-width: 5.5rem !important;
+    padding: 0 .6rem !important;
+    font-size: .8rem !important;
+    line-height: 1;
+    white-space: nowrap;
+    width: auto !important;
+  }
+  /* Valor com pill "variável" centralizado verticalmente */
+  .celula-valor { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; }
+  .celula-valor .pill { margin: 0; }
+  /* Ações em linha única: botões não quebram para a linha de baixo */
+  .acoes-grupo { flex-wrap: nowrap !important; }
+  /* Investimentos: nome sem quebra e campo de valor mais estreito */
+  td.nome-caixinha { white-space: nowrap; text-align: left; min-width: 16rem; }
+  input.campo-valor { width: 6rem; text-align: center; font-size: .75rem; padding: .3rem .4rem; }
+  input.campo-data { width: 7.5rem !important; font-size: .75rem; padding: .3rem .4rem; }
 </style>

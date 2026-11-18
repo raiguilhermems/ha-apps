@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 
 from app.db import get_session
 from app.models import Account, RecurringRule, Tag
+from app.services.cartoes import buscar_por_nome
 from app.services.edit import update_rule
 from app.services.recurring import (
     create_rule,
@@ -23,6 +24,15 @@ from app.web import RedirectResponse, templates
 router = APIRouter()
 
 
+def _dia_efetivo(session: Session, kind: str, card_name: str, day: int) -> int:
+    """Recorrente de cartão usa o dia de pagamento cadastrado no cartão."""
+    if kind == "despesa" and card_name.strip():
+        cartao = buscar_por_nome(session, card_name)
+        if cartao is not None and cartao.dia_pagamento:
+            return cartao.dia_pagamento
+    return day
+
+
 @router.get("/recorrentes")
 def recorrentes_page(request: Request, mes: str | None = None, session: Session = Depends(get_session)):
     ref = mes or current_month()
@@ -33,6 +43,9 @@ def recorrentes_page(request: Request, mes: str | None = None, session: Session 
         card = session.get(Account, r.account_id) if r.account_id else None
         cats = [{"nome": n, "id": ids.get(n)} for n in parse_tags(r.tags_text)]
         rows.append({"rule": r, "cartao": card.name if card else "—", "cats": cats})
+    rows.sort(key=lambda r: (r["rule"].kind != "receita", r["rule"].description.lower()))
+    verif = rule_month_status(session, ref)
+    verif.sort(key=lambda v: (v["tipo"] != "receita", v["descricao"].lower()))
     cards = session.exec(select(Account).where(Account.type == "cartao")).all()
     return templates.TemplateResponse(
         request,
@@ -43,7 +56,7 @@ def recorrentes_page(request: Request, mes: str | None = None, session: Session 
             "next": add_months(ref, 1),
             "rows": rows,
             "cards": cards,
-            "verif": rule_month_status(session, ref),
+            "verif": verif,
             "dia_padrao": int(get_setting(session, "dia_padrao")),
             "today": date.today(),
         },
@@ -63,6 +76,7 @@ def create_recurring(
 ):
     if not 0 <= day <= 31:
         raise HTTPException(status_code=400, detail="Dia do mês deve estar entre 1 e 31")
+    day = _dia_efetivo(session, kind, card_name, day)
     create_rule(session, description, parse_brl(amount), day, kind, card_name, variable, categorias)
     session.commit()
     generate_all(session)
@@ -100,6 +114,7 @@ def edit_recurring(
         raise HTTPException(status_code=404, detail="Recorrência não encontrada")
     if not 0 <= day <= 31:
         raise HTTPException(status_code=400, detail="Dia do mês deve estar entre 1 e 31")
+    day = _dia_efetivo(session, kind, card_name, day)
     update_rule(session, rule, description, parse_brl(amount), day, kind, card_name, variable, categorias)
     session.commit()
     return RedirectResponse("/recorrentes", status_code=303)

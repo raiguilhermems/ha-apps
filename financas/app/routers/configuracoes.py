@@ -1,4 +1,4 @@
-"""Configurações: vencimento padrão, projeção, backup, importação e apagar dados."""
+"""Configurações: vencimento padrão, backup, importação e apagar dados."""
 
 import shutil
 from datetime import date
@@ -21,7 +21,6 @@ def configuracoes_page(request: Request, erro: str | None = None, session: Sessi
         request,
         "configuracoes.html",
         {
-            "horizonte": int(get_setting(session, "projecao_meses")),
             "tamanho_mb": f"{tamanho:.2f}".replace(".", ","),
             "erro": erro,
             "dia_padrao": int(get_setting(session, "dia_padrao")),
@@ -57,14 +56,6 @@ def apagar_dados(confirmacao: str = Form(...), session: Session = Depends(get_se
             continue
         session.execute(table.delete())
     session.commit()
-    return RedirectResponse("/configuracoes", status_code=303)
-
-
-@router.post("/configuracoes/projecao")
-def salvar_projecao(meses: int = Form(...), session: Session = Depends(get_session)):
-    if not 1 <= meses <= 12:
-        raise HTTPException(status_code=400, detail="Use de 1 a 12 meses")
-    set_setting(session, "projecao_meses", str(meses))
     return RedirectResponse("/configuracoes", status_code=303)
 
 

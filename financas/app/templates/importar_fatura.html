@@ -27,7 +27,7 @@
   <div class="panel">
     <form class="import-form" method="post" action="{{ base() }}/parcelados/importar/previa" enctype="multipart/form-data">
       <label class="campo-arquivo">Arquivo CSV da fatura<input type="file" name="arquivo" accept=".csv,text/csv" required></label>
-      <label>Mês da fatura
+      <label>Mês ano da fatura
         <span style="display:flex;gap:.5rem">
           <select name="mes_num" style="flex:1">{% for num, nome in meses %}<option value="{{ num }}"{% if num == mes_atual_num %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select>
           <select name="ano" style="flex:1">{% for a in anos %}<option value="{{ a }}"{% if a == ano_atual %} selected{% endif %}>{{ a }}</option>{% endfor %}</select>

@@ -34,16 +34,6 @@
     <p class="aviso">O 1º dia útil considera segunda a sexta. Feriados ainda não entram no cálculo.</p>
   </div>
 
-  <h2>Projeção</h2>
-  <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/configuracoes/projecao">
-      <label>Meses exibidos na projeção (1 a 12)
-        <input type="number" name="meses" min="1" max="12" value="{{ horizonte }}" required>
-      </label>
-      <button type="submit" class="primary">Salvar</button>
-    </form>
-  </div>
-
   <h2>Backup</h2>
   <div class="panel">
     <p class="aviso">Banco atual: {{ tamanho_mb }} MB. Baixe um backup antes de importar ou apagar qualquer coisa.</p>

@@ -6,21 +6,13 @@ Controle financeiro pessoal, autohospedado, rodando como add-on do Home Assistan
 
 ### Início
 
-Visão do mês escolhido: totais de receitas, despesas, saldo e o que já foi pago ou ainda falta pagar. Os lançamentos aparecem com as receitas primeiro e as despesas depois, cada grupo com o seu total. Também mostra os atrasados, um gráfico de receitas × despesas e a projeção dos próximos meses.
-
-![Início](docs/inicio.png)
-
-![Início, outra visão](docs/inicio1.png)
+Visão do mês escolhido: totais de receitas, despesas, saldo e o que já foi pago ou ainda falta pagar. Os lançamentos aparecem com as receitas primeiro e as despesas depois, cada grupo com o seu total. Também mostra os atrasados e um gráfico de receitas × despesas.
 
 ---
 
 ### Parcelados
 
 Todos os parcelamentos em andamento, com a forma de pagamento, o cartão (quando houver), as categorias e o saldo que ainda falta pagar. Traz um gráfico com o total de parcelas por mês e o formulário para cadastrar um novo parcelamento. O cartão é escolhido na lista de cartões cadastrados.
-
-![Parcelados](docs/parcelados.png)
-
-![Parcelados, outra visão](docs/parcelados1.png)
 
 #### Importar fatura do Nubank
 
@@ -32,19 +24,11 @@ Pela aba Parcelados, o botão **Importar fatura** lê o CSV da fatura do Nubank 
 
 Pagamentos e estornos são ignorados. O mês da fatura é escolhido em uma lista de mês e ano, já preenchida com o mês atual, e o vencimento sai do dia de pagamento cadastrado no cartão.
 
-![Tela inicial da importação](docs/importar.png)
-
-![Prévia da primeira importação](docs/importar1.png)
-
-![Prévia da importação do mês seguinte, com compras novas, já cadastradas e ignoradas](docs/importar2.png)
-
 ---
 
 ### Recorrentes
 
 Regras mensais, como salário, aluguel e assinaturas. A tabela de verificação mostra, mês a mês, se cada regra já foi lançada, paga ou recebida, e avisa quando o valor real é diferente do previsto.
-
-![Recorrentes](docs/recorrentes.png)
 
 ---
 
@@ -52,15 +36,11 @@ Regras mensais, como salário, aluguel e assinaturas. A tabela de verificação 
 
 Lista das categorias usadas nos lançamentos. Ao abrir uma categoria, você vê os lançamentos dela no mês escolhido e um gráfico com a evolução mensal de receitas e despesas dela.
 
-![Detalhamento de uma categoria](docs/categorias.png)
-
 ---
 
 ### Cartões
 
 Cadastro dos cartões, com o dia de pagamento da fatura (por exemplo, dia 5). Se o dia cair em fim de semana, o vencimento passa para o próximo dia útil. Os cartões cadastrados aparecem nas listas de Parcelados, Recorrentes e na importação da fatura. Um cartão que tem parcelamentos ou recorrentes vinculados não pode ser excluído.
-
-![Cartões](docs/cartoes.png)
 
 ---
 
@@ -68,17 +48,11 @@ Cadastro dos cartões, com o dia de pagamento da fatura (por exemplo, dia 5). Se
 
 Caixinhas de investimento cadastradas à mão, sem ligação com bancos, corretoras ou APIs. Cada caixinha tem nome, tipo (renda fixa, renda variável, fundos, previdência ou outro) e valor atual. Ao atualizar o valor, o histórico guarda a data e a variação em relação ao registro anterior. A tela mostra o total investido e a evolução ao longo do tempo; cada caixinha tem o seu próprio gráfico e tabela de histórico.
 
-![Investimentos](docs/investimentos.png)
-
-![Detalhe de uma caixinha](docs/investimento_detalhe.png)
-
 ---
 
 ### Configurações
 
-Vencimento padrão dos lançamentos, horizonte da projeção, backup e importação do banco, e a opção de apagar todos os dados.
-
-![Configurações](docs/configuracoes.png)
+Vencimento padrão dos lançamentos, backup e importação do banco, e a opção de apagar todos os dados.
 
 ## O que faz
 
@@ -93,12 +67,13 @@ Vencimento padrão dos lançamentos, horizonte da projeção, backup e importaç
 - Cadastro de cartões com dia de pagamento, escolhidos por lista nos formulários.
 - Investimentos: caixinhas com tipo e valor atual, histórico de atualizações e gráfico de evolução. Sem vínculo externo.
 - Categorias, com filtro por mês, gráfico mensal de receitas e despesas e links a partir de cada lançamento. A categoria "terceiro" não entra no total.
-- Projeção dos próximos meses: compromissos cadastrados mais a média dos gastos avulsos.
 - Gráficos de receitas × despesas por mês e de parcelas por mês.
-- Configurações: vencimento padrão, horizonte da projeção, backup, importação e apagar dados.
+- Configurações: vencimento padrão, backup, importação e apagar dados.
 
 ## Últimas versões
 
+- **0.0.18**: sem projeção no início; rótulo com a soma dos últimos 6 meses por categoria; recorrentes de cartão usam o dia do cartão; receitas antes das despesas nas recorrentes; botões padronizados.
+- **0.0.17**: ajustes de layout nas tabelas e nos botões de ação; aba Investimentos com ajustes de tela.
 - **0.0.16**: aba Investimentos, com caixinhas, tipo, valor atual, histórico de atualizações e gráficos de evolução; Parcelados mostra o resultado da importação da fatura.
 - **0.0.15**: importação da fatura do Nubank com prévia; cadastro de cartões com dia de pagamento; cartão escolhido por lista nos formulários.
 - **0.0.14**: navbar com rolagem no celular e lançamentos em linha única no celular.
@@ -113,7 +88,7 @@ Histórico completo em [CHANGELOG completo](financas/CHANGELOG.md).
 2. Adicione o endereço deste repositório.
 3. Instale o Finanças, inicie e ative "Mostrar na barra lateral".
 
-**Atualizando para 0.0.15:** esta versão cria colunas e uma tabela novas no banco. Se você já tem dados, baixe um backup pela aba Configurações antes e depois reinstale o add-on ou apague o banco.
+**Atualizando:** antes de atualizar, baixe um backup pela aba Configurações. A versão 0.0.18 não altera a estrutura do banco.
 
 ## Rodar localmente (desenvolvimento)
 
@@ -170,9 +145,51 @@ O banco SQLite fica em /data/finance.db dentro do add-on e não é versionado. A
 - financas/app/main.py: cria o app e inclui as telas.
 - financas/app/web.py: templates, filtros, prefixo do ingress e redirecionamento.
 - financas/app/routers/: rotas de cada tela (lançamentos, parcelados, importação, categorias, recorrentes, cartões, investimentos e configurações).
-- financas/app/services/: regras de negócio (recorrentes, parcelados, importação de fatura, leitura do CSV do Nubank, cartões, investimentos, projeção, resumo, gráficos, categorias e configurações).
+- financas/app/services/: regras de negócio (recorrentes, parcelados, importação de fatura, leitura do CSV do Nubank, cartões, investimentos, resumo, gráficos, categorias e configurações).
 - financas/app/templates/: telas em Jinja2.
 - financas/scripts/: utilitários de desenvolvimento, como os geradores de dados de demonstração (parcelados e caixinhas).
 - financas/scripts/demo/: faturas fictícias para testar a importação.
 - financas/tests/: testes automatizados.
 - financas/CHANGELOG.md: histórico de versões.
+
+## Capturas de tela
+
+### Início
+
+![Início](docs/inicio.png)
+
+![Início, outra visão](docs/inicio1.png)
+
+### Parcelados
+
+![Parcelados](docs/parcelados.png)
+
+![Parcelados, outra visão](docs/parcelados1.png)
+
+![Tela inicial da importação](docs/importar.png)
+
+![Prévia da primeira importação](docs/importar1.png)
+
+![Prévia da importação do mês seguinte, com compras novas, já cadastradas e ignoradas](docs/importar2.png)
+
+### Recorrentes
+
+![Recorrentes](docs/recorrentes.png)
+
+### Categorias
+
+![Detalhamento de uma categoria](docs/categorias.png)
+
+### Cartões
+
+![Cartões](docs/cartoes.png)
+
+### Investimentos
+
+![Investimentos](docs/investimentos.png)
+
+![Detalhe de uma caixinha](docs/investimento_detalhe.png)
+
+### Configurações
+
+![Configurações](docs/configuracoes.png)

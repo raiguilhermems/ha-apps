@@ -4,9 +4,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlmodel import Session, select
 
 from app.db import get_session
-from app.services.charts import categoria_mensal
-from app.services.charts import categoria_mensal
-from app.services.charts import categoria_mensal
+from app.services.charts import categoria_mensal, soma_categoria_periodo
 from app.models import Account, Tag, TransactionTag
 from app.services.tags import get_or_create_tag, parse_tags, transactions_with_tag
 from app.services.util import add_months, current_month, month_bounds
@@ -106,8 +104,7 @@ def tag_report(tag_id: int, request: Request, mes: str | None = None, session: S
             "receitas": receitas,
             "despesas": despesas,
             "grafico": categoria_mensal(session, tag.id, ref),
-            "grafico": categoria_mensal(session, tag.id, ref),
-            "grafico": categoria_mensal(session, tag.id, ref),
+            "soma6": soma_categoria_periodo(session, tag.id, ref),
         },
     )
 

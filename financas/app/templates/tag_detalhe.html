@@ -16,6 +16,7 @@
 
   <h2>Evolução da categoria</h2>
   <div class="panel">
+    <p class="aviso">Últimos 6 meses ({{ soma6.inicio | mes }} a {{ soma6.fim | mes }}): receitas <strong class="pago">{{ soma6.receitas | brl }}</strong> · despesas <strong style="color:#f87171">{{ soma6.despesas | brl }}</strong></p>
     <div style="position:relative;height:240px"><canvas id="chartCategoria"></canvas></div>
   </div>
 

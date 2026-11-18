@@ -1,0 +1,141 @@
+diff --git a/financas/app/routers/importacao.py b/financas/app/routers/importacao.py
+index fc5982d..cee1b62 100644
+--- a/financas/app/routers/importacao.py
++++ b/financas/app/routers/importacao.py
+@@ -9,7 +9,7 @@ from sqlmodel import Session
+ 
+ from app.db import get_session
+ from app.models import Account
+-from app.services.cartoes import criar, listar, vencimento_fatura
++from app.services.cartoes import buscar_por_nome, criar, listar, validar_novo, vencimento_fatura
+ from app.services.fatura_nubank import LinhaFatura, ler_fatura, limpa_nome
+ from app.services.importacao import gravar, montar_previa
+ from app.web import RedirectResponse, templates
+@@ -27,7 +27,8 @@ def _volta(mensagem: str) -> RedirectResponse:
+     return RedirectResponse(f"/parcelados/importar?erro={quote(mensagem)}", status_code=303)
+ 
+ 
+-def _escolher_cartao(session: Session, cartao_id: str, novo_nome: str, novo_dia: str) -> Account:
++def _escolher_cartao(session: Session, cartao_id: str, novo_nome: str, novo_dia: str) -> tuple[str, int]:
++    """Devolve (nome, dia de pagamento) do cartão escolhido. Não grava nada no banco."""
+     if cartao_id.strip():
+         try:
+             cartao = session.get(Account, int(cartao_id))
+@@ -35,12 +36,13 @@ def _escolher_cartao(session: Session, cartao_id: str, novo_nome: str, novo_dia:
+             cartao = None
+         if cartao is None or cartao.type != "cartao":
+             raise ValueError("Cartão não encontrado")
+-        return cartao
++        if cartao.dia_pagamento is None:
++            raise ValueError("Este cartão não tem dia de pagamento. Edite-o na aba Cartões.")
++        return cartao.name, cartao.dia_pagamento
+     if novo_nome.strip():
+         dia = novo_dia.strip()
+-        cartao = criar(session, novo_nome, int(dia) if dia else None)
+-        session.commit()
+-        return cartao
++        nome = validar_novo(session, novo_nome, int(dia) if dia else None)
++        return nome, int(dia)
+     raise ValueError("Escolha um cartão da lista ou preencha os dados de um cartão novo")
+ 
+ 
+@@ -81,19 +83,19 @@ async def importar_previa(
+ 
+     try:
+         mes = f"{int(ano):04d}-{int(mes_num):02d}"
+-        cartao = _escolher_cartao(session, cartao_id, novo_nome, novo_dia)
+-        if cartao.dia_pagamento is None:
+-            raise ValueError("Este cartão não tem dia de pagamento. Edite-o na aba Cartões.")
+-        vencimento = vencimento_fatura(mes, cartao.dia_pagamento)
++        nome_cartao, dia_pagamento = _escolher_cartao(session, cartao_id, novo_nome, novo_dia)
++        vencimento = vencimento_fatura(mes, dia_pagamento)
+     except ValueError as e:
+         session.rollback()
+         return _volta(str(e))
+ 
+-    previa = montar_previa(session, linhas, cartao.name)
++    previa = montar_previa(session, linhas, nome_cartao)
++    # Cartão novo só é gravado na confirmação; o dia vai junto para criá-lo lá.
++    dia_novo = dia_pagamento if not cartao_id.strip() else None
+     return templates.TemplateResponse(
+         request,
+         "previa_fatura.html",
+-        {"previa": previa, "cartao": cartao.name, "vencimento": vencimento},
++        {"previa": previa, "cartao": nome_cartao, "vencimento": vencimento, "dia_novo": dia_novo},
+     )
+ 
+ 
+@@ -105,6 +107,15 @@ async def importar_confirmar(request: Request, session: Session = Depends(get_se
+         return _volta("Cartão não informado")
+     vencimento = date.fromisoformat(str(form["vencimento"]))
+ 
++    dia_novo = str(form.get("dia_novo", "")).strip()
++    if dia_novo and buscar_por_nome(session, cartao) is None:
++        try:
++            criar(session, cartao, int(dia_novo))
++        except ValueError as e:
++            session.rollback()
++            return _volta(str(e))
++        session.commit()
++
+     itens = []
+     for i in form.getlist("indices"):
+         i = str(i)
+diff --git a/financas/app/services/cartoes.py b/financas/app/services/cartoes.py
+index 747dbbb..96f16ad 100644
+--- a/financas/app/services/cartoes.py
++++ b/financas/app/services/cartoes.py
+@@ -38,11 +38,17 @@ def _valida(nome: str, dia: int | None) -> str:
+     return nome
+ 
+ 
+-def criar(session: Session, nome: str, dia: int | None) -> Account:
++def validar_novo(session: Session, nome: str, dia: int | None) -> str:
++    """Valida um cartão que ainda não existe, sem gravar. Devolve o nome normalizado."""
+     nome = _valida(nome, dia)
+     existente = buscar_por_nome(session, nome)
+     if existente:
+         raise ValueError(f"Já existe o cartão {existente.name}")
++    return nome
++
++
++def criar(session: Session, nome: str, dia: int | None) -> Account:
++    nome = validar_novo(session, nome, dia)
+     cartao = Account(name=nome, type="cartao", dia_pagamento=dia)
+     session.add(cartao)
+     session.flush()
+diff --git a/financas/app/templates/previa_fatura.html b/financas/app/templates/previa_fatura.html
+index 68d56c4..ceb31ad 100644
+--- a/financas/app/templates/previa_fatura.html
++++ b/financas/app/templates/previa_fatura.html
+@@ -17,6 +17,7 @@
+   <form method="post" action="{{ base() }}/parcelados/importar/confirmar">
+     <input type="hidden" name="cartao" value="{{ cartao }}">
+     <input type="hidden" name="vencimento" value="{{ vencimento.isoformat() }}">
++    {% if dia_novo %}<input type="hidden" name="dia_novo" value="{{ dia_novo }}">{% endif %}
+ 
+     <div class="panel">
+       <table>
+diff --git a/financas/tests/test_cartoes.py b/financas/tests/test_cartoes.py
+index caab68e..f64eaf6 100644
+--- a/financas/tests/test_cartoes.py
++++ b/financas/tests/test_cartoes.py
+@@ -2,7 +2,7 @@ from datetime import date
+ 
+ import pytest
+ 
+-from app.services.cartoes import criar, excluir, listar, vencimento_fatura
++from app.services.cartoes import criar, excluir, listar, validar_novo, vencimento_fatura
+ from app.services.parcelados import create_plan
+ 
+ 
+@@ -42,3 +42,9 @@ def test_cartao_sem_vinculos_pode_ser_excluido(session):
+     excluir(session, cartao)
+     session.commit()
+     assert listar(session) == []
++
++
++def test_validar_novo_nao_grava_cartao(session):
++    nome = validar_novo(session, "  Itaú  ", 5)
++    assert nome == "Itaú"
++    assert listar(session) == []

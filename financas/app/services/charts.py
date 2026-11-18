@@ -57,3 +57,17 @@ def categoria_mensal(session: Session, tag_id: int, ref: str, antes: int = 6, de
         "receitas": receitas,
         "despesas": despesas,
     }
+
+
+def soma_categoria_periodo(session: Session, tag_id: int, ref: str, meses: int = 6) -> dict:
+    """Soma de receitas e despesas da categoria nos `meses` meses terminando em `ref`."""
+    mes_inicio = add_months(ref, -(meses - 1))
+    receitas = despesas = 0
+    for i in range(meses):
+        start, end = month_bounds(add_months(mes_inicio, i))
+        for t in transactions_with_tag(session, tag_id, start, end):
+            if t.kind == "receita":
+                receitas += t.amount_cents
+            elif t.kind == "despesa":
+                despesas += t.amount_cents
+    return {"inicio": mes_inicio, "fim": ref, "receitas": receitas, "despesas": despesas}

@@ -71,7 +71,7 @@
       <label>Valor da parcela (R$)<input name="amount" placeholder="150,00" required></label>
       <label>Total de parcelas<input type="number" name="total" min="1" required></label>
       <label>Parcela atual<input type="number" name="current_n" min="1" value="1" required></label>
-      <label class="span2">Mês da parcela atual
+      <label class="span2">Mês ano da parcela atual
         <span style="display:flex;gap:.5rem">
           <select name="mes_num" style="flex:1">{% for num, nome in meses %}<option value="{{ num }}"{% if num == mes_atual_num %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select>
           <select name="ano" style="flex:1">{% for a in anos %}<option value="{{ a }}"{% if a == ano_atual %} selected{% endif %}>{{ a }}</option>{% endfor %}</select>

@@ -49,14 +49,14 @@
     <tbody>
     {% for i in invs %}
     <tr>
-      <td><a href="{{ base() }}/investimentos/{{ i.id }}">{{ i.nome }}</a></td>
+      <td class="nome-caixinha"><a href="{{ base() }}/investimentos/{{ i.id }}">{{ i.nome }}</a></td>
       <td class="muted">{{ tipos.get(i.tipo, i.tipo) }}</td>
       <td>{{ i.valor_cents | brl }}</td>
       <td>{{ i.atualizado_em.strftime('%d/%m/%Y') }}</td>
       <td style="white-space: nowrap;">
         <form class="inline" method="post" action="{{ base() }}/investimentos/{{ i.id }}/valor">
-          <input name="valor" placeholder="novo valor" required style="width:9rem">
-          <input type="date" name="data" value="{{ hoje }}" style="width:auto">
+          <input name="valor" placeholder="Valor atualizado" required class="campo-valor">
+          <input type="date" name="data" value="{{ hoje }}" class="campo-data">
           <button type="submit" class="small">Atualizar</button>
         </form>
         <form class="inline" method="post" action="{{ base() }}/investimentos/{{ i.id }}/excluir" onsubmit="return confirm('Excluir esta caixinha e todo o histórico dela?')">

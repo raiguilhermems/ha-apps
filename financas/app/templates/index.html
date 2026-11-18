@@ -131,23 +131,6 @@
     </table>
   </div>
 
-  <h2>Projeção (próximos {{ horizonte }} meses)</h2>
-  <div class="panel">
-    <p class="aviso"><strong>Estimativa, não é saldo garantido.</strong> Soma os compromissos cadastrados (recorrentes pelo valor da regra e parcelas) com a média dos gastos avulsos dos últimos 3 meses.</p>
-    <table>
-      <thead><tr><th>Mês</th><th>Compromissos</th><th>Gastos avulsos (média)</th><th>Total estimado</th></tr></thead>
-      <tbody>
-      {% for p in proj %}
-      <tr>
-        <td>{{ p.mes | mes }}</td>
-        <td>{{ p.compromissos | brl }}</td>
-        <td>{{ p.variavel | brl }}</td>
-        <td>{{ p.total | brl }}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
