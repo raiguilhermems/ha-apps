@@ -34,14 +34,18 @@ def parcelados_page(
     session: Session = Depends(get_session),
 ):
     data = schedule_summaries(session)
+    plans_pagar = [p for p in data["plans"] if p["tipo"] == "pagar"]
+    plans_receber = [p for p in data["plans"] if p["tipo"] == "receber"]
     cards = session.exec(select(Account).where(Account.type == "cartao")).all()
     hoje = date.today()
     return templates.TemplateResponse(
         request,
         "parcelados.html",
         {
-            "plans": data["plans"],
+            "plans_pagar": plans_pagar,
+            "plans_receber": plans_receber,
             "saldo_total": data["saldo_total"],
+            "saldo_receber": data["saldo_receber"],
             "cards": cards,
             "ref": current_month(),
             "meses": MESES,

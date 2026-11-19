@@ -12,6 +12,7 @@
   <p><a href="{{ base() }}/categorias">‹ Categorias</a></p>
   <h1>{{ tag.name | capitalize }}
     {% if tag.excludes_from_total %}<span class="pill">não soma no total</span>{% endif %}
+    {% if tag.kind == 'pessoa' %}<span class="pill">pessoa</span>{% else %}<span class="pill">categoria</span>{% endif %}
   </h1>
 
   <h2>Evolução da categoria</h2>

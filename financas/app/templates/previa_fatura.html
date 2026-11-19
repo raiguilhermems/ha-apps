@@ -11,8 +11,10 @@
 <div class="wrap">
   <p><a href="{{ base() }}/parcelados/importar">‹ Voltar</a></p>
   <h1>Prévia da importação</h1>
+  <datalist id="pessoas">{% for n in pessoas or [] %}<option value="{{ n }}">{% endfor %}</datalist>
   <p class="muted">Cartão: <strong>{{ cartao }}</strong> · Vencimento: <strong>{{ vencimento.strftime('%d/%m/%Y') }}</strong></p>
   <p class="aviso">Marque as compras que quer cadastrar. Compras já cadastradas e compras ignoradas antes vêm desmarcadas. Marque uma delas se quiser cadastrar agora.</p>
+  <p class="aviso">Se a compra foi feita para outra pessoa, que vai devolver o valor, marque "de outra pessoa" e informe quem paga. Ela não vira parcelado: entra em Parcelados, na seção A receber.</p>
 
   <form method="post" action="{{ base() }}/parcelados/importar/confirmar">
     <input type="hidden" name="cartao" value="{{ cartao }}">
@@ -22,7 +24,7 @@
     <div class="panel">
       <table>
         <thead>
-          <tr><th>Incluir</th><th>Compra</th><th>Nome exibido</th><th>Parcela</th><th>Valor</th><th>Categorias</th><th>Situação</th></tr>
+          <tr><th>Incluir</th><th>Compra</th><th>Nome exibido</th><th>Parcela</th><th>Valor</th><th>Categorias</th><th>Situação</th><th>De outra pessoa</th></tr>
         </thead>
         <tbody>
         {% for r in previa %}
@@ -51,6 +53,14 @@
               <label class="check"><input type="checkbox" name="atualizar_{{ i }}"> atualizar</label>
             {% else %}<span class="pill bad">ignorada antes</span>{% endif %}
           </td>
+          <td>
+            <label class="check"><input type="checkbox" name="terceiro_{{ i }}" {% if r.terceiro %}checked{% endif %}> de outra pessoa</label>
+            <div id="pessoa-{{ i }}" style="margin-top:.3rem">
+              <input name="pessoa_{{ i }}" value="{{ r.pessoa }}" placeholder="Quem paga" list="pessoas" style="width:100%">
+              {% if r.status == 'existente' %}<small class="muted">Converte o parcelado de cartão em a receber.</small>
+              {% elif r.status == 'ignorada' %}<small class="muted">Cadastra como a receber.</small>{% endif %}
+            </div>
+          </td>
         </tr>
         {% endfor %}
         </tbody>
@@ -60,5 +70,13 @@
     <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button type="submit" class="primary">Gravar importação</button></div>
   </form>
 </div>
+<script>
+document.querySelectorAll('input[name^="terceiro_"]').forEach(function (cb) {
+  var campo = document.getElementById('pessoa-' + cb.name.slice('terceiro_'.length));
+  function atualiza() { campo.style.display = cb.checked ? '' : 'none'; }
+  cb.addEventListener('change', atualiza);
+  atualiza();
+});
+</script>
 </body>
 </html>

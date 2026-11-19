@@ -10,23 +10,54 @@
 {% include "_nav.html" %}
 <div class="wrap">
   <h1>Categorias</h1>
-  <p class="aviso">Use categorias para agrupar lançamentos, como mercado, luz ou lazer. Marque "Não soma no total" para que os lançamentos da categoria saiam do total do mês, como ocorre com terceiros.</p>
+  <p class="aviso">Use categorias para agrupar lançamentos, como mercado, luz ou lazer. Marque "Não soma no total" para que os lançamentos da categoria saiam do total do mês, como ocorre com terceiros. Pessoas são criadas automaticamente nas compras a receber e reúnem tudo que cada uma deve.</p>
 
   <h2>Nova categoria</h2>
   <div class="panel">
     <form class="grid" method="post" action="{{ base() }}/categorias">
       <label>Nome<input name="name" placeholder="ex.: mercado" required></label>
+      <label>Tipo
+        <select name="tipo">
+          <option value="categoria">Categoria</option>
+          <option value="pessoa">Pessoa</option>
+        </select>
+      </label>
       <label class="check" style="align-self: end; height: 2.4rem; display: flex; align-items: center;"><input type="checkbox" name="excludes"> Não soma no total</label>
       <button type="submit" class="primary">Criar</button>
     </form>
   </div>
 
+  <h2>Pessoas</h2>
+  {% if pessoas %}
+  <table>
+    <thead><tr><th>Nome</th><th class="col-estreita">Ações</th></tr></thead>
+    <tbody>
+    {% for t in pessoas %}
+    <tr>
+      <td>{{ t.name | title }}</td>
+      <td class="col-estreita">
+        <div class="acoes-grupo">
+          <a class="btn small" href="{{ base() }}/categorias/{{ t.id }}">Ver lançamentos</a>
+          <a class="btn small" href="{{ base() }}/categorias/{{ t.id }}/editar">Editar</a>
+          <form class="inline" method="post" action="{{ base() }}/categorias/{{ t.id }}/excluir" onsubmit="return confirm('Excluir esta pessoa? Ela será removida de todos os lançamentos.')">
+            <button type="submit" class="small danger">Excluir</button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Nenhuma pessoa cadastrada. Elas aparecem aqui ao cadastrar uma compra de terceiros.</p>
+  {% endif %}
+
   <h2>Categorias cadastradas</h2>
-  {% if tags %}
+  {% if categorias %}
   <table>
     <thead><tr><th>Nome</th><th class="col-estreita">Regra</th><th class="col-estreita">Ações</th></tr></thead>
     <tbody>
-    {% for t in tags %}
+    {% for t in categorias %}
 <tr>
   <td>{{ t.name }}</td>
   <td class="col-estreita">{% if t.excludes_from_total %}<span class="pill">não soma</span>{% else %}<span class="pill ok">soma</span>{% endif %}</td>

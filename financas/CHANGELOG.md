@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.0.20
+
+- Parcelados: nova seção **A receber** para compras feitas no cartão para outra pessoa, que vai devolver o valor. Cada parcela recebida entra como receita no mês do recebimento, sem conta de cartão.
+- Importação da fatura: a prévia tem a opção "de outra pessoa", com o nome de quem paga. Essas compras viram a receber, e não parcelado. Se alguma estiver sem nome, nada é gravado.
+- Reimportar a fatura não duplica as compras de terceiros já cadastradas.
+- Prévia: "de outra pessoa" aparece em todas as linhas. Marcar em uma compra já cadastrada converte o parcelado em a receber; em uma ignorada, cadastra como a receber.
+- Categorias: a edição permite mudar o tipo entre categoria e pessoa. A tela de cada categoria mostra o selo do tipo.
+- A receber: o nome da pessoa aparece só uma vez, como link.
+- Categorias têm tipo: "categoria" ou "pessoa". Pessoas aparecem em uma lista própria na tela de Categorias.
+- A prévia da importação sugere as pessoas já cadastradas (campo com sugestões).
+- A receber: o nome da pessoa leva à categoria dela.
+- A receber: o nome de quem paga vira categoria automaticamente nas parcelas. Na tela de Categorias, a pessoa mostra tudo que ela deve e já pagou. Editar o plano não remove essa categoria.
+- Parcelados: os cards de saldo passam a ser "Saldo a pagar" e "Saldo a receber".
+- Atenção: esta versão cria as colunas `installment_plan.tipo`, `pessoa`, `parcela_inicial` e `cartao_origem_id`. A migração é automática; não precisa recriar o banco.
+
 ## 0.0.19
 
 - Segurança: o nome do cartão não entra mais no código JavaScript da confirmação de exclusão.
