@@ -20,6 +20,49 @@
 </head>
 <body>
 {% include "_nav.html" %}
+{% macro plano(plan, receber) %}
+    <h3>{{ plan.descricao }}</h3>
+    <div class="panel" style="border-left:4px solid {{ '#34d399' if receber else 'var(--bad)' }}">
+      <p>
+        {% if receber and plan.pessoa_tag_id %}<a class="pill" href="{{ base() }}/categorias/{{ plan.pessoa_tag_id }}">{{ plan.forma_label }}</a>{% else %}<span class="pill">{{ plan.forma_label }}</span>{% endif %}
+        <span class="pill">{{ plan.parcela | brl }} por mês</span>
+        {% for c in plan.categorias %}{% if c.id %}<a class="pill" href="{{ base() }}/categorias/{{ c.id }}">{{ c.nome }}</a>{% else %}<span class="pill">{{ c.nome }}</span>{% endif %}{% endfor %}
+        {% if plan.concluido %}<span class="pill ok">Concluído</span>{% endif %}
+      </p>
+      <p class="aviso">{{ plan.pagas }} de {{ plan.total }} {{ 'recebidas' if receber else 'pagas' }} · restam {{ plan.restantes }} · saldo {{ plan.saldo | brl }}</p>
+      <table>
+        <thead><tr><th>Parcela</th><th>Mês</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody>
+        {% for r in plan.rows %}
+        <tr>
+          <td>{{ r.n }}/{{ plan.total }}</td>
+          <td>{{ r.mes | mes }}</td>
+          <td>{{ r.vencimento.strftime('%d/%m/%Y') }}</td>
+          <td>{{ r.valor | brl }}</td>
+          <td>
+            {% if r.status == 'pago' %}<span class="pill ok">{{ 'Recebida' if receber else 'Paga' }}</span>
+            {% elif r.status == 'atrasada' %}<span class="pill bad">Atrasada</span>
+            {% elif r.status == 'passada' %}<span class="pill">Anterior</span>
+            {% else %}<span class="pill">Pendente</span>{% endif %}
+          </td>
+          <td>
+            {% if r.tx_id %}
+            <form class="inline" method="post" action="{{ base() }}/parcelados/tx/{{ r.tx_id }}/pagar">
+              <button type="submit" class="small">{{ 'Desmarcar' if r.status == 'pago' else ('Marcar recebida' if receber else 'Marcar paga') }}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <a class="btn small" href="{{ base() }}/parcelados/{{ plan.id }}/editar">Editar</a>
+      <form class="inline" method="post" action="{{ base() }}/parcelados/{{ plan.id }}/excluir" onsubmit="return confirm('Excluir este parcelamento? As parcelas pendentes serão apagadas.')">
+        <button type="submit" class="danger">Excluir parcelamento</button>
+      </form>
+    </div>
+{% endmacro %}
+
 <div class="wrap">
   <h1>Parcelados</h1>
   {% if erro %}
@@ -38,8 +81,9 @@
   {% endif %}
 
   <section class="cards">
-    <div class="card"><small>Saldo devedor total</small><div class="val bad">{{ saldo_total | brl }}</div></div>
-    <div class="card"><small>Parcelamentos ativos</small><div class="val">{{ plans | rejectattr('concluido') | list | length }}</div></div>
+    <div class="card"><small>Saldo a pagar</small><div class="val bad">{{ saldo_total | brl }}</div></div>
+    <div class="card"><small>Saldo a receber</small><div class="val" style="color:#34d399">{{ saldo_receber | brl }}</div></div>
+    <div class="card"><small>Parcelamentos ativos</small><div class="val">{{ (plans_pagar + plans_receber) | rejectattr('concluido') | list | length }}</div></div>
   </section>
 
   <p><a class="btn" href="{{ base() }}/parcelados/importar">Importar fatura do Nubank</a></p>
@@ -86,55 +130,16 @@
       <label class="span3">Categorias (separadas por vírgula)<input name="categorias" placeholder="mercado, lazer"></label>
       <button type="submit" class="primary cadastrar">Cadastrar</button>
     </form>
-    <p class="aviso">Parcelas de cartão ficam só nesta tela, porque já estão na fatura. Marque cada uma como paga quando a fatura for paga. As demais entram no Início automaticamente, no mês de cada parcela.</p>
+    <p class="aviso">Parcelas de cartão ficam só nesta tela, porque já estão na fatura. Marque cada uma como paga quando a fatura for paga. As demais entram no Início automaticamente, no mês de cada parcela. Compras feitas para outra pessoa entram pela importação da fatura, na seção A receber.</p>
   </div>
 
-  {% if plans %}
-    {% for plan in plans %}
-    <h2>{{ plan.descricao }}</h2>
-    <div class="panel">
-      <p>
-        <span class="pill">{{ plan.forma_label }}</span>
-        <span class="pill">{{ plan.parcela | brl }} por mês</span>
-        {% for c in plan.categorias %}{% if c.id %}<a class="pill" href="{{ base() }}/categorias/{{ c.id }}">{{ c.nome }}</a>{% else %}<span class="pill">{{ c.nome }}</span>{% endif %}{% endfor %}
-        {% if plan.concluido %}<span class="pill ok">Concluído</span>{% endif %}
-      </p>
-      <p class="aviso">{{ plan.pagas }} de {{ plan.total }} pagas · restam {{ plan.restantes }} · saldo {{ plan.saldo | brl }}</p>
-      <table>
-        <thead><tr><th>Parcela</th><th>Mês</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
-        <tbody>
-        {% for r in plan.rows %}
-        <tr>
-          <td>{{ r.n }}/{{ plan.total }}</td>
-          <td>{{ r.mes | mes }}</td>
-          <td>{{ r.vencimento.strftime('%d/%m/%Y') }}</td>
-          <td>{{ r.valor | brl }}</td>
-          <td>
-            {% if r.status == 'pago' %}<span class="pill ok">Paga</span>
-            {% elif r.status == 'atrasada' %}<span class="pill bad">Atrasada</span>
-            {% elif r.status == 'passada' %}<span class="pill">Anterior</span>
-            {% else %}<span class="pill">Pendente</span>{% endif %}
-          </td>
-          <td>
-            {% if r.tx_id %}
-            <form class="inline" method="post" action="{{ base() }}/parcelados/tx/{{ r.tx_id }}/pagar">
-              <button type="submit" class="small">{{ 'Desmarcar' if r.status == 'pago' else 'Marcar paga' }}</button>
-            </form>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-      <a class="btn small" href="{{ base() }}/parcelados/{{ plan.id }}/editar">Editar</a>
-      <form class="inline" method="post" action="{{ base() }}/parcelados/{{ plan.id }}/excluir" onsubmit="return confirm('Excluir este parcelamento? As parcelas pendentes serão apagadas.')">
-        <button type="submit" class="danger">Excluir parcelamento</button>
-      </form>
-    </div>
-    {% endfor %}
-  {% else %}
-  <p class="muted">Nenhum parcelamento cadastrado.</p>
-  {% endif %}
+  <h2>A receber</h2>
+  {% for plan in plans_receber %}{{ plano(plan, true) }}
+  {% else %}<p class="muted">Nenhuma compra de terceiros a receber. Elas entram pela importação da fatura, marcando "de outra pessoa".</p>{% endfor %}
+
+  <h2>A pagar</h2>
+  {% for plan in plans_pagar %}{{ plano(plan, false) }}
+  {% else %}<p class="muted">Nenhum parcelamento a pagar.</p>{% endfor %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>

@@ -24,6 +24,11 @@ NEW_COLUMNS = [
     ("installment_plan", "generated_until", "VARCHAR"),
     ("recurring_rule", "tags_text", "VARCHAR NOT NULL DEFAULT ''"),
     ("installment_plan", "tags_text", "VARCHAR NOT NULL DEFAULT ''"),
+    ("installment_plan", "tipo", "VARCHAR NOT NULL DEFAULT 'pagar'"),
+    ("installment_plan", "pessoa", "VARCHAR NOT NULL DEFAULT ''"),
+    ("installment_plan", "parcela_inicial", "INTEGER NOT NULL DEFAULT 1"),
+    ("installment_plan", "cartao_origem_id", "INTEGER"),
+    ("tag", "kind", "VARCHAR NOT NULL DEFAULT 'categoria'"),
 ]
 
 

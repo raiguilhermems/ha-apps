@@ -5,13 +5,13 @@ from datetime import date
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.db import get_session
-from app.models import Account
+from app.models import Account, Tag
 from app.services.cartoes import buscar_por_nome, criar, listar, validar_novo, vencimento_fatura
 from app.services.fatura_nubank import LinhaFatura, ler_fatura, limpa_nome
-from app.services.importacao import gravar, montar_previa
+from app.services.importacao import gravar, montar_previa, sem_pessoa
 from app.web import RedirectResponse, templates
 
 router = APIRouter()
@@ -90,12 +90,13 @@ async def importar_previa(
         return _volta(str(e))
 
     previa = montar_previa(session, linhas, nome_cartao)
+    pessoas = [t.name for t in session.exec(select(Tag).where(Tag.kind == "pessoa").order_by(Tag.name)).all()]
     # Cartão novo só é gravado na confirmação; o dia vai junto para criá-lo lá.
     dia_novo = dia_pagamento if not cartao_id.strip() else None
     return templates.TemplateResponse(
         request,
         "previa_fatura.html",
-        {"previa": previa, "cartao": nome_cartao, "vencimento": vencimento, "dia_novo": dia_novo},
+        {"previa": previa, "cartao": nome_cartao, "vencimento": vencimento, "dia_novo": dia_novo, "pessoas": pessoas},
     )
 
 
@@ -106,15 +107,6 @@ async def importar_confirmar(request: Request, session: Session = Depends(get_se
     if not cartao:
         return _volta("Cartão não informado")
     vencimento = date.fromisoformat(str(form["vencimento"]))
-
-    dia_novo = str(form.get("dia_novo", "")).strip()
-    if dia_novo and buscar_por_nome(session, cartao) is None:
-        try:
-            criar(session, cartao, int(dia_novo))
-        except ValueError as e:
-            session.rollback()
-            return _volta(str(e))
-        session.commit()
 
     itens = []
     for i in form.getlist("indices"):
@@ -128,19 +120,41 @@ async def importar_confirmar(request: Request, session: Session = Depends(get_se
             total=int(str(form[f"total_{i}"])),
             valor_cents=int(str(form[f"valor_{i}"])),
         )
+        terceiro = f"terceiro_{i}" in form
         itens.append(
             {
                 "linha": linha,
                 "status": str(form[f"status_{i}"]),
-                "incluir": f"incluir_{i}" in form,
+                # Marcar "de outra pessoa" já cadastra a compra
+                "incluir": f"incluir_{i}" in form or terceiro,
                 "atualizar": f"atualizar_{i}" in form,
                 "plano_id": str(form.get(f"plano_{i}", "")) or None,
                 "nome": str(form.get(f"nome_{i}", "")).strip() or linha.nome,
                 "categorias": str(form.get(f"categorias_{i}", "")),
+                "terceiro": terceiro,
+                "pessoa": str(form.get(f"pessoa_{i}", "")).strip(),
             }
         )
 
-    resultado = gravar(session, cartao, vencimento, itens)
+    # Valida antes de criar cartão novo ou gravar qualquer coisa
+    faltando = sem_pessoa(itens)
+    if faltando:
+        return _volta("Informe quem vai pagar para: " + ", ".join(faltando) + ". Nada foi gravado.")
+
+    dia_novo = str(form.get("dia_novo", "")).strip()
+    if dia_novo and buscar_por_nome(session, cartao) is None:
+        try:
+            criar(session, cartao, int(dia_novo))
+        except ValueError as e:
+            session.rollback()
+            return _volta(str(e))
+        session.commit()
+
+    try:
+        resultado = gravar(session, cartao, vencimento, itens)
+    except ValueError as e:
+        session.rollback()
+        return _volta(str(e))
     return RedirectResponse(
         f"/parcelados?criadas={resultado['criadas']}&atualizadas={resultado['atualizadas']}",
         status_code=303,

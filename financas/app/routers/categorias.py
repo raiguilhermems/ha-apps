@@ -16,7 +16,9 @@ router = APIRouter()
 @router.get("/categorias")
 def tags_page(request: Request, session: Session = Depends(get_session)):
     tags = session.exec(select(Tag).order_by(Tag.name)).all()
-    return templates.TemplateResponse(request, "tags.html", {"tags": tags})
+    pessoas = [t for t in tags if t.kind == "pessoa"]
+    categorias = [t for t in tags if t.kind != "pessoa"]
+    return templates.TemplateResponse(request, "tags.html", {"pessoas": pessoas, "categorias": categorias})
 
 
 @router.get("/tags")
@@ -28,12 +30,16 @@ def tags_antigo():
 def create_tag(
     name: str = Form(...),
     excludes: bool = Form(False),
+    tipo: str = Form("categoria"),
     session: Session = Depends(get_session),
 ):
     names = parse_tags(name)
     if not names:
         raise HTTPException(status_code=400, detail="Informe um nome para a categoria")
-    tag = get_or_create_tag(session, names[0])
+    if tipo not in ("categoria", "pessoa"):
+        raise HTTPException(status_code=400, detail="Tipo inválido")
+    tag = get_or_create_tag(session, names[0], kind=tipo)
+    tag.kind = tipo
     tag.excludes_from_total = excludes
     session.add(tag)
     session.commit()
@@ -45,6 +51,7 @@ def update_tag(
     tag_id: int,
     name: str = Form(...),
     excludes: bool = Form(False),
+    tipo: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
     tag = session.get(Tag, tag_id)
@@ -56,6 +63,10 @@ def update_tag(
     clash = session.exec(select(Tag).where(Tag.name == names[0], Tag.id != tag.id)).first()
     if clash:
         raise HTTPException(status_code=400, detail="Já existe uma categoria com esse nome")
+    if tipo is not None:
+        if tipo not in ("categoria", "pessoa"):
+            raise HTTPException(status_code=400, detail="Tipo inválido")
+        tag.kind = tipo
     tag.name = names[0]
     tag.excludes_from_total = excludes
     session.add(tag)

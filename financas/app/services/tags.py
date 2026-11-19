@@ -17,10 +17,10 @@ def parse_tags(text: str) -> list[str]:
     return names
 
 
-def get_or_create_tag(session: Session, name: str) -> Tag:
+def get_or_create_tag(session: Session, name: str, kind: str = "categoria") -> Tag:
     tag = session.exec(select(Tag).where(Tag.name == name)).first()
     if tag is None:
-        tag = Tag(name=name, excludes_from_total=(name == "terceiro"))
+        tag = Tag(name=name, excludes_from_total=(name == "terceiro"), kind=kind)
         session.add(tag)
         session.flush()
     return tag

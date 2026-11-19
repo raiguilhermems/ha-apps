@@ -1,13 +1,18 @@
-"""Parcelados: cadastro, lançamento automático e cronograma."""
+"""Parcelados: cadastro, lançamento automático e cronograma.
+
+Dois tipos de plano:
+- pagar: compra parcelada que sai do seu dinheiro (cartão, boleto etc.). Vira despesa.
+- receber: compra no cartão feita para outra pessoa, que vai devolver o valor. Vira receita,
+  sem conta de cartão, para não entrar na fatura nem nas despesas.
+"""
 
 from datetime import date
 
 from sqlmodel import Session, select
-from app.models import TransactionTag
 
-from app.models import Account, InstallmentPlan, Tag, Transaction
+from app.models import Account, InstallmentPlan, Tag, Transaction, TransactionTag
 from app.services.recurring import get_or_create_card
-from app.services.tags import parse_tags, set_tags
+from app.services.tags import get_or_create_tag, parse_tags, set_tags
 from app.services.util import add_months, current_month, due_in_month
 
 FORMAS = {
@@ -16,6 +21,7 @@ FORMAS = {
     "carne": "Carnê",
     "financiamento": "Financiamento",
     "outro": "Outro",
+    "a_receber": "A receber",
 }
 
 
@@ -23,6 +29,38 @@ def _months_between(a: str, b: str) -> int:
     ya, ma = map(int, a.split("-"))
     yb, mb = map(int, b.split("-"))
     return (yb - ya) * 12 + (mb - ma)
+
+
+def _nome_pessoa(pessoa: str) -> str | None:
+    """Nome normalizado da pessoa, usado como categoria do tipo pessoa."""
+    texto = " ".join(pessoa.replace(",", " ").replace(";", " ").split())
+    nomes = parse_tags(texto)
+    return nomes[0] if nomes else None
+
+
+def _garantir_pessoa(session: Session, nome: str) -> None:
+    """Cria a categoria como pessoa, ou promove uma categoria existente com o mesmo nome."""
+    tag = get_or_create_tag(session, nome, kind="pessoa")
+    if tag.kind != "pessoa":
+        tag.kind = "pessoa"
+        session.add(tag)
+        session.flush()
+
+
+def _tags_do_plano(tipo: str, pessoa: str, categorias: str) -> list[str]:
+    """Categorias do plano. Em "receber", o nome da pessoa vira categoria automaticamente."""
+    nomes = parse_tags(categorias)
+    nome = _nome_pessoa(pessoa) if tipo == "receber" else None
+    if nome and nome not in nomes:
+        nomes.append(nome)
+    return nomes
+
+
+def _descricao(plan: InstallmentPlan, n: int) -> str:
+    texto = f"{plan.description} ({n}/{plan.installments_total})"
+    if plan.tipo == "receber" and plan.pessoa:
+        texto += f" · {plan.pessoa}"
+    return texto
 
 
 def create_plan(
@@ -36,6 +74,9 @@ def create_plan(
     current_ref: str,
     due_day: int,
     categorias: str = "",
+    tipo: str = "pagar",
+    pessoa: str = "",
+    cartao_origem_id: int | None = None,
 ) -> InstallmentPlan:
     account_id = None
     if payment_method == "cartao":
@@ -48,10 +89,18 @@ def create_plan(
         installments_total=total,
         first_due_month=add_months(current_ref, -(current_n - 1)),
         due_day=due_day,
-        tags_text=", ".join(parse_tags(categorias)),
+        tags_text=", ".join(_tags_do_plano(tipo, pessoa, categorias)),
+        tipo=tipo,
+        pessoa=pessoa.strip(),
+        parcela_inicial=current_n,
+        cartao_origem_id=cartao_origem_id,
     )
     session.add(plan)
     session.flush()
+    if tipo == "receber":
+        nome = _nome_pessoa(pessoa)
+        if nome:
+            _garantir_pessoa(session, nome)
     return plan
 
 
@@ -62,12 +111,14 @@ def generate_installments(session: Session, months_ahead: int = 12) -> int:
     created = 0
 
     for plan in session.exec(select(InstallmentPlan)).all():
+        receber = plan.tipo == "receber"
         m = base
         if plan.generated_until:
             m = max(base, add_months(plan.generated_until, 1))
         while m <= target_end:
             n = _months_between(plan.first_due_month, m) + 1
-            if 1 <= n <= plan.installments_total:
+            # Em "receber", parcelas antes da atual não são criadas
+            if 1 <= n <= plan.installments_total and not (receber and n < plan.parcela_inicial):
                 exists = session.exec(
                     select(Transaction.id).where(
                         Transaction.installment_plan_id == plan.id,
@@ -76,10 +127,10 @@ def generate_installments(session: Session, months_ahead: int = 12) -> int:
                 ).first()
                 if not exists:
                     tx = Transaction(
-                        description=f"{plan.description} ({n}/{plan.installments_total})",
+                        description=_descricao(plan, n),
                         amount_cents=plan.installment_cents,
                         due_date=due_in_month(m, plan.due_day),
-                        kind="despesa",
+                        kind="receita" if receber else "despesa",
                         account_id=plan.account_id,
                         installment_plan_id=plan.id,
                         installment_n=n,
@@ -101,19 +152,23 @@ def schedule_summaries(session: Session) -> dict:
     base = current_month()
     today = date.today()
     plans_out = []
-    saldo_total = 0
+    saldo_pagar = 0
+    saldo_receber = 0
     tags_map = {c.name: c.id for c in session.exec(select(Tag)).all()}
 
     for p in session.exec(select(InstallmentPlan)).all():
+        receber = p.tipo == "receber"
         txs = session.exec(
             select(Transaction).where(Transaction.installment_plan_id == p.id)
         ).all()
         by_n = {t.installment_n: t for t in txs}
 
+        # Em "receber", as parcelas antes da inicial contam como já recebidas
+        inicio = p.parcela_inicial if receber else 1
         rows = []
-        pagas = 0
+        pagas = inicio - 1
         saldo = 0
-        for n in range(1, p.installments_total + 1):
+        for n in range(inicio, p.installments_total + 1):
             m = add_months(p.first_due_month, n - 1)
             vencimento = due_in_month(m, p.due_day)
             t = by_n.get(n)
@@ -148,18 +203,36 @@ def schedule_summaries(session: Session) -> dict:
         restantes = p.installments_total - pagas
         concluido = restantes == 0
         if not concluido:
-            saldo_total += saldo
+            if receber:
+                saldo_receber += saldo
+            else:
+                saldo_pagar += saldo
 
         cartao_nome = ""
         if p.account_id:
             acc = session.get(Account, p.account_id)
             cartao_nome = acc.name if acc else ""
 
+        if receber:
+            forma_label = f"A receber · {p.pessoa}" if p.pessoa else "A receber"
+        elif p.payment_method == "cartao":
+            forma_label = f"Cartão {cartao_nome}".strip()
+        else:
+            forma_label = FORMAS.get(p.payment_method, p.payment_method)
+
         plans_out.append({
             "id": p.id,
+            "tipo": p.tipo,
+            "pessoa_tag_id": tags_map.get(_nome_pessoa(p.pessoa)) if receber and p.pessoa else None,
+            "pessoa": p.pessoa,
             "descricao": p.description,
-            "categorias": [{"nome": n, "id": tags_map.get(n)} for n in parse_tags(p.tags_text)],
-            "forma_label": f"Cartão {cartao_nome}".strip() if p.payment_method == "cartao" else FORMAS.get(p.payment_method, p.payment_method),
+            "categorias": [
+                {"nome": n, "id": tags_map.get(n)}
+                for n in parse_tags(p.tags_text)
+                # Em "receber", o nome da pessoa já aparece no link do plano; não repete aqui
+                if not (receber and n == _nome_pessoa(p.pessoa))
+            ],
+            "forma_label": forma_label,
             "parcela": p.installment_cents,
             "total": p.installments_total,
             "pagas": pagas,
@@ -170,7 +243,7 @@ def schedule_summaries(session: Session) -> dict:
         })
 
     plans_out.sort(key=lambda r: (r["concluido"], r["descricao"]))
-    return {"plans": plans_out, "saldo_total": saldo_total}
+    return {"plans": plans_out, "saldo_total": saldo_pagar, "saldo_receber": saldo_receber}
 
 
 def update_plan(
@@ -185,9 +258,13 @@ def update_plan(
     plan.description = description.strip()
     plan.installment_cents = installment_cents
     plan.due_day = due_day
-    plan.tags_text = ", ".join(parse_tags(categorias))
+    plan.tags_text = ", ".join(_tags_do_plano(plan.tipo, plan.pessoa, categorias))
     session.add(plan)
     session.flush()
+    if plan.tipo == "receber":
+        nome = _nome_pessoa(plan.pessoa)
+        if nome:
+            _garantir_pessoa(session, nome)
 
     pendentes = session.exec(
         select(Transaction).where(
@@ -196,12 +273,46 @@ def update_plan(
         )
     ).all()
     for t in pendentes:
-        t.description = f"{plan.description} ({t.installment_n}/{plan.installments_total})"
+        t.description = _descricao(plan, t.installment_n)
         t.amount_cents = installment_cents
         t.due_date = due_in_month(t.due_date.strftime("%Y-%m"), due_day)
         session.add(t)
         session.flush()
         set_tags(session, t, parse_tags(plan.tags_text))
+
+
+def converter_para_receber(
+    session: Session,
+    plan: InstallmentPlan,
+    pessoa: str,
+    cartao_origem_id: int,
+    current_n: int,
+    categorias: str = "",
+) -> None:
+    """Transforma um parcelado de cartão em a receber. Parcelas já pagas ficam como histórico."""
+    for t in session.exec(select(Transaction).where(Transaction.installment_plan_id == plan.id)).all():
+        if t.status == "pendente":
+            for link in session.exec(select(TransactionTag).where(TransactionTag.transaction_id == t.id)).all():
+                session.delete(link)
+            session.delete(t)
+        else:
+            t.installment_plan_id = None
+            t.installment_n = None
+            session.add(t)
+    session.flush()
+    plan.tipo = "receber"
+    plan.pessoa = pessoa.strip()
+    plan.cartao_origem_id = cartao_origem_id
+    plan.account_id = None
+    plan.payment_method = "a_receber"
+    plan.parcela_inicial = current_n
+    plan.generated_until = None
+    plan.tags_text = ", ".join(_tags_do_plano("receber", plan.pessoa, categorias or plan.tags_text))
+    session.add(plan)
+    session.flush()
+    nome = _nome_pessoa(plan.pessoa)
+    if nome:
+        _garantir_pessoa(session, nome)
 
 
 def delete_plan(session: Session, plan: InstallmentPlan) -> None:

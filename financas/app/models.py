@@ -18,6 +18,7 @@ class Tag(SQLModel, table=True):
     name: str = Field(unique=True)
     # Se True, lançamentos com esta tag não entram no total (ex.: gasto de terceiro)
     excludes_from_total: bool = False
+    kind: str = "categoria"  # categoria | pessoa (pessoa: quem deve ou deve a você)
 
 
 class RecurringRule(SQLModel, table=True):
@@ -49,6 +50,10 @@ class InstallmentPlan(SQLModel, table=True):
     due_day: int = 10
     tags_text: str = ""
     generated_until: Optional[str] = None  # AAAA-MM, último mês já gerado
+    tipo: str = "pagar"  # pagar | receber (compra de terceiro que será devolvida)
+    pessoa: str = ""  # quem vai pagar; só para receber
+    parcela_inicial: int = 1  # receber: parcelas antes desta são tratadas como já recebidas
+    cartao_origem_id: Optional[int] = Field(default=None, foreign_key="account.id")  # cartão da compra (receber)
 
 
 class Transaction(SQLModel, table=True):

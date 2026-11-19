@@ -52,6 +52,10 @@ Cadastre a compra com a descrição, a forma de pagamento, o valor de cada parce
 
 O gráfico mostra quanto vence por mês nos próximos 12 meses. Parcelas anteriores ao mês do cadastro são consideradas pagas.
 
+### Compras de terceiros (a receber)
+
+Quando você compra no cartão para outra pessoa, que vai devolver o valor, marque a compra como **de outra pessoa** na prévia da importação da fatura e informe quem vai pagar. Essa compra não vira parcelado: ela aparece em **Parcelados → A receber**. Cada parcela entra como receita no mês do recebimento, e o botão **Marcar recebida** registra o pagamento. O dia de recebimento padrão é o dia da fatura; é possível ajustá-lo em **Editar**.
+
 ## Categorias
 
 Crie categorias como mercado, luz ou lazer. Cada lançamento pode ter mais de uma.
