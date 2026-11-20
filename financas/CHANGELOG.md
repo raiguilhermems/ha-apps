@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.21
+
+- Recorrentes viram categorias automaticamente, com link para ver a evolução mês a mês. Renomear a recorrente renomeia a categoria.
+- Pessoas e recorrentes não podem ter o nome de outra categoria. Lançamentos digitados à mão e a importação da fatura também são conferidos.
+- Renomear uma pessoa atualiza os planos a receber e os lançamentos pendentes.
+- Excluir uma recorrente mantém a categoria dela no histórico, como categoria comum.
+- Configurações: quantidade de meses antes e depois do mês de referência no gráfico (padrão 6 e 3). Vale para o Início e para as categorias.
+- Gráficos: meses ainda não fechados aparecem em cor mais clara, e o mês atual tem contorno.
+- Categorias: o rótulo de resumo segue a mesma configuração de meses.
+- Parcelas por mês: soma só as parcelas a pagar; as parcelas a receber ficam de fora.
+- Atenção: esta versão cria a coluna `recurring_rule.tag_id`. A migração é automática; não precisa recriar o banco.
+
 ## 0.0.20
 
 - Parcelados: nova seção **A receber** para compras feitas no cartão para outra pessoa, que vai devolver o valor. Cada parcela recebida entra como receita no mês do recebimento, sem conta de cartão.

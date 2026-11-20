@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 
 from app.models import RecurringRule, Tag, Transaction, TransactionTag
 from app.services.tags import mark_third_party
-from app.services.recurring import _account_for
+from app.services.recurring import _account_for, aplicar_categoria
 from app.services.tags import parse_tags, set_tags
 from app.services.util import current_month, due_in_month, month_bounds
 
@@ -68,9 +68,9 @@ def update_rule(
     rule.kind = kind
     rule.variable = variable
     rule.account_id = _account_for(session, kind, card_name)
-    rule.tags_text = ", ".join(parse_tags(categorias))
     session.add(rule)
-    session.flush()
+    # Renomeia a categoria da regra e grava as categorias; levanta ValueError se houver conflito
+    aplicar_categoria(session, rule, categorias)
 
     start = month_bounds(current_month())[0]
     pendentes = session.exec(

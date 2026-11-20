@@ -7,8 +7,9 @@ from app.services.summary import monthly_summary
 from app.services.tags import transactions_with_tag
 from app.services.util import add_months, current_month, mes_curto, month_bounds
 
-
-def receitas_despesas_mensal(session: Session, ref: str, antes: int = 6, depois: int = 5) -> dict:
+def receitas_despesas_mensal(session: Session, ref: str, antes: int = 6, depois: int = 3) -> dict:
+    """Barras do Início. Meses depois do atual são 'futuro' (ainda não fechados)."""
+    atual = current_month()
     meses = [add_months(ref, i) for i in range(-antes, depois + 1)]
     receitas, despesas = [], []
     for m in meses:
@@ -19,15 +20,20 @@ def receitas_despesas_mensal(session: Session, ref: str, antes: int = 6, depois:
         "labels": [mes_curto(m) for m in meses],
         "receitas": receitas,
         "despesas": despesas,
+        "futuro": [m > atual for m in meses],
+        "atual": [m == atual for m in meses],
     }
 
 
 def parcelas_mensal(session: Session, months: int = 12) -> dict:
+    """Parcelas a pagar por mês. Parcelas a receber ficam de fora."""
     base = current_month()
     meses = [add_months(base, i) for i in range(months)]
     data = schedule_summaries(session)
     totais = {m: 0 for m in meses}
     for plan in data["plans"]:
+        if plan["tipo"] != "pagar":
+            continue
         for row in plan["rows"]:
             if row["status"] in ("pago", "passada"):
                 continue
@@ -39,7 +45,9 @@ def parcelas_mensal(session: Session, months: int = 12) -> dict:
     }
 
 
-def categoria_mensal(session: Session, tag_id: int, ref: str, antes: int = 6, depois: int = 5) -> dict:
+def categoria_mensal(session: Session, tag_id: int, ref: str, antes: int = 6, depois: int = 3) -> dict:
+    """Barras da categoria. Mesma regra do Início: 'futuro' e 'atual' para destacar os meses."""
+    atual = current_month()
     meses = [add_months(ref, i) for i in range(-antes, depois + 1)]
     receitas, despesas = [], []
     for m in meses:
@@ -56,6 +64,8 @@ def categoria_mensal(session: Session, tag_id: int, ref: str, antes: int = 6, de
         "labels": [mes_curto(m) for m in meses],
         "receitas": receitas,
         "despesas": despesas,
+        "futuro": [m > atual for m in meses],
+        "atual": [m == atual for m in meses],
     }
 
 

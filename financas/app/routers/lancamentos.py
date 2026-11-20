@@ -10,9 +10,17 @@ from app.models import Transaction, TransactionTag
 from app.services.charts import receitas_despesas_mensal
 from app.services.edit import update_transaction
 from app.services.recurring import generate_all
+from app.services.settings import get_int_setting
 from app.services.parcelados import generate_installments
 from app.services.summary import card_account_ids, monthly_summary, overdue_items
-from app.services.tags import parse_tags, set_tags, tag_text, tags_by_tx, tags_com_id_by_tx
+from app.services.tags import (
+    parse_tags,
+    set_tags,
+    tag_text,
+    tags_by_tx,
+    tags_com_id_by_tx,
+    validar_categorias_livres,
+)
 from app.services.util import add_months, current_month, month_bounds, parse_brl
 from app.web import RedirectResponse, templates
 
@@ -35,6 +43,13 @@ def _third_text(tx: Transaction) -> str:
     return f"{tx.third_party_cents / 100:.2f}".replace(".", ",")
 
 
+def _validar_tags(session: Session, tags: str, tx_id: int | None = None) -> None:
+    try:
+        validar_categorias_livres(session, tags, tx_id=tx_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 def _delete_tx(session: Session, tx: Transaction) -> None:
     for link in session.exec(
         select(TransactionTag).where(TransactionTag.transaction_id == tx.id)
@@ -50,6 +65,8 @@ def home(request: Request, mes: str | None = None, session: Session = Depends(ge
     ref = mes or current_month()
     start, end = month_bounds(ref)
     cards = card_account_ids(session)
+    antes = get_int_setting(session, "grafico_antes", 1, 24)
+    depois = get_int_setting(session, "grafico_depois", 0, 12)
 
     txs = session.exec(
         select(Transaction)
@@ -71,7 +88,8 @@ def home(request: Request, mes: str | None = None, session: Session = Depends(ge
             "txs": txs,
             "tag_map": tags_com_id_by_tx(session, [t.id for t in txs]),
             "atrasados": overdue_items(session),
-            "grafico": receitas_despesas_mensal(session, ref),
+            "antes": antes,
+            "grafico": receitas_despesas_mensal(session, ref, antes, depois),
         },
     )
 
@@ -86,6 +104,7 @@ def create_transaction(
     tags: str = Form(""),
     session: Session = Depends(get_session),
 ):
+    _validar_tags(session, tags)
     amount_cents = parse_brl(amount)
     tx = Transaction(
         description=description,
@@ -128,6 +147,7 @@ def edit_transaction(
     tx = session.get(Transaction, tx_id)
     if tx is None:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+    _validar_tags(session, tags, tx_id)
     amount_cents = parse_brl(amount)
     update_transaction(session, tx, description, amount_cents, due_date, kind)
     tx.third_party_cents = _parse_third(third_party, amount_cents, kind)

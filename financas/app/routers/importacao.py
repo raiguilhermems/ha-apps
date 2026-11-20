@@ -12,6 +12,7 @@ from app.models import Account, Tag
 from app.services.cartoes import buscar_por_nome, criar, listar, validar_novo, vencimento_fatura
 from app.services.fatura_nubank import LinhaFatura, ler_fatura, limpa_nome
 from app.services.importacao import gravar, montar_previa, sem_pessoa
+from app.services.tags import validar_categorias_livres
 from app.web import RedirectResponse, templates
 
 router = APIRouter()
@@ -140,6 +141,12 @@ async def importar_confirmar(request: Request, session: Session = Depends(get_se
     faltando = sem_pessoa(itens)
     if faltando:
         return _volta("Informe quem vai pagar para: " + ", ".join(faltando) + ". Nada foi gravado.")
+
+    for item in itens:
+        try:
+            validar_categorias_livres(session, item["categorias"])
+        except ValueError as e:
+            return _volta(f"{e} Nada foi gravado.")
 
     dia_novo = str(form.get("dia_novo", "")).strip()
     if dia_novo and buscar_por_nome(session, cartao) is None:

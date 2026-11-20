@@ -29,6 +29,7 @@ NEW_COLUMNS = [
     ("installment_plan", "parcela_inicial", "INTEGER NOT NULL DEFAULT 1"),
     ("installment_plan", "cartao_origem_id", "INTEGER"),
     ("tag", "kind", "VARCHAR NOT NULL DEFAULT 'categoria'"),
+    ("recurring_rule", "tag_id", "INTEGER"),
 ]
 
 

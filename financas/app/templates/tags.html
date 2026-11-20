@@ -52,6 +52,28 @@
   <p class="muted">Nenhuma pessoa cadastrada. Elas aparecem aqui ao cadastrar uma compra de terceiros.</p>
   {% endif %}
 
+  <h2>Recorrentes</h2>
+  {% if recorrentes %}
+  <table>
+    <thead><tr><th>Nome</th><th class="col-estreita">Ações</th></tr></thead>
+    <tbody>
+    {% for t in recorrentes %}
+    <tr>
+      <td>{{ t.name }}</td>
+      <td class="col-estreita">
+        <div class="acoes-grupo">
+          <a class="btn small" href="{{ base() }}/categorias/{{ t.id }}">Ver lançamentos</a>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="aviso">Estas categorias são criadas pelas recorrências. Para renomear ou excluir, use a aba Recorrentes.</p>
+  {% else %}
+  <p class="muted">Nenhuma recorrência com categoria ainda.</p>
+  {% endif %}
+
   <h2>Categorias cadastradas</h2>
   {% if categorias %}
   <table>

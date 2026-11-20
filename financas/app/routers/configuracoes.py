@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from sqlmodel import Session, SQLModel
 
 from app.db import DB_PATH, engine, get_session, init_db
-from app.services.settings import get_setting, set_setting
+from app.services.settings import get_int_setting, get_setting, set_setting
 from app.web import RedirectResponse, templates
 
 router = APIRouter()
@@ -51,6 +51,8 @@ def configuracoes_page(request: Request, erro: str | None = None, session: Sessi
             "tamanho_mb": f"{tamanho:.2f}".replace(".", ","),
             "erro": erro,
             "dia_padrao": int(get_setting(session, "dia_padrao")),
+            "grafico_antes": get_int_setting(session, "grafico_antes", 1, 24),
+            "grafico_depois": get_int_setting(session, "grafico_depois", 0, 12),
         },
     )
 
@@ -102,4 +104,13 @@ def salvar_dia_padrao(dia: int = Form(...), session: Session = Depends(get_sessi
     if not 0 <= dia <= 31:
         raise HTTPException(status_code=400, detail="Use 0 (1º dia útil) ou de 1 a 31")
     set_setting(session, "dia_padrao", str(dia))
+    return RedirectResponse("/configuracoes", status_code=303)
+
+
+@router.post("/configuracoes/grafico")
+def salvar_grafico(antes: int = Form(...), depois: int = Form(...), session: Session = Depends(get_session)):
+    if not 1 <= antes <= 24 or not 0 <= depois <= 12:
+        return RedirectResponse("/configuracoes?erro=grafico", status_code=303)
+    set_setting(session, "grafico_antes", str(antes))
+    set_setting(session, "grafico_depois", str(depois))
     return RedirectResponse("/configuracoes", status_code=303)

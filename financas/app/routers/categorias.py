@@ -5,8 +5,18 @@ from sqlmodel import Session, select
 
 from app.db import get_session
 from app.services.charts import categoria_mensal, soma_categoria_periodo
+from app.services.settings import get_int_setting
 from app.models import Account, Tag, TransactionTag
-from app.services.tags import get_or_create_tag, parse_tags, transactions_with_tag
+from app.services.parcelados import ids_da_pessoa, renomear_pessoa
+from app.services.tags import (
+    CATEGORIA,
+    PESSOA,
+    RECORRENTE,
+    get_or_create_tag,
+    parse_tags,
+    reservar_categoria,
+    transactions_with_tag,
+)
 from app.services.util import add_months, current_month, month_bounds
 from app.web import RedirectResponse, templates
 
@@ -16,9 +26,14 @@ router = APIRouter()
 @router.get("/categorias")
 def tags_page(request: Request, session: Session = Depends(get_session)):
     tags = session.exec(select(Tag).order_by(Tag.name)).all()
-    pessoas = [t for t in tags if t.kind == "pessoa"]
-    categorias = [t for t in tags if t.kind != "pessoa"]
-    return templates.TemplateResponse(request, "tags.html", {"pessoas": pessoas, "categorias": categorias})
+    pessoas = [t for t in tags if t.kind == PESSOA]
+    recorrentes = [t for t in tags if t.kind == RECORRENTE]
+    categorias = [t for t in tags if t.kind not in (PESSOA, RECORRENTE)]
+    return templates.TemplateResponse(
+        request,
+        "tags.html",
+        {"pessoas": pessoas, "recorrentes": recorrentes, "categorias": categorias},
+    )
 
 
 @router.get("/tags")
@@ -57,6 +72,11 @@ def update_tag(
     tag = session.get(Tag, tag_id)
     if tag is None:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    if tag.kind == RECORRENTE:
+        raise HTTPException(
+            status_code=400,
+            detail="Esta categoria vem de uma recorrência. Edite o nome e o tipo na aba Recorrentes.",
+        )
     names = parse_tags(name)
     if not names:
         raise HTTPException(status_code=400, detail="Informe um nome para a categoria")
@@ -64,10 +84,22 @@ def update_tag(
     if clash:
         raise HTTPException(status_code=400, detail="Já existe uma categoria com esse nome")
     if tipo is not None:
-        if tipo not in ("categoria", "pessoa"):
+        if tipo not in (CATEGORIA, PESSOA):
             raise HTTPException(status_code=400, detail="Tipo inválido")
-        tag.kind = tipo
-    tag.name = names[0]
+        if tag.kind == PESSOA and tipo != PESSOA:
+            raise HTTPException(
+                status_code=400,
+                detail="Pessoa é definida pelas compras a receber e não pode virar categoria.",
+            )
+        if tipo == PESSOA and tag.kind != PESSOA:
+            try:
+                reservar_categoria(session, tag.name, PESSOA, ids_da_pessoa(session, tag.name), "a pessoa")
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e))
+    if tag.kind == PESSOA and names[0] != tag.name:
+        renomear_pessoa(session, tag, name)
+    else:
+        tag.name = names[0]
     tag.excludes_from_total = excludes
     session.add(tag)
     session.commit()
@@ -79,6 +111,11 @@ def delete_tag(tag_id: int, session: Session = Depends(get_session)):
     tag = session.get(Tag, tag_id)
     if tag is None:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    if tag.kind == RECORRENTE:
+        raise HTTPException(
+            status_code=400,
+            detail="Esta categoria vem de uma recorrência. Exclua a recorrência para removê-la.",
+        )
     for link in session.exec(select(TransactionTag).where(TransactionTag.tag_id == tag.id)).all():
         session.delete(link)
     session.delete(tag)
@@ -92,6 +129,8 @@ def tag_report(tag_id: int, request: Request, mes: str | None = None, session: S
     if tag is None:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
     ref = mes or current_month()
+    antes = get_int_setting(session, "grafico_antes", 1, 24)
+    depois = get_int_setting(session, "grafico_depois", 0, 12)
     start, end = month_bounds(ref)
     rows = []
     receitas = 0
@@ -114,8 +153,9 @@ def tag_report(tag_id: int, request: Request, mes: str | None = None, session: S
             "rows": rows,
             "receitas": receitas,
             "despesas": despesas,
-            "grafico": categoria_mensal(session, tag.id, ref),
-            "soma6": soma_categoria_periodo(session, tag.id, ref),
+            "grafico": categoria_mensal(session, tag.id, ref, antes, depois),
+            "antes": antes,
+            "soma6": soma_categoria_periodo(session, tag.id, ref, antes),
         },
     )
 

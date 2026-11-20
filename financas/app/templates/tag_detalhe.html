@@ -17,7 +17,7 @@
 
   <h2>Evolução da categoria</h2>
   <div class="panel">
-    <p class="aviso">Últimos 6 meses ({{ soma6.inicio | mes }} a {{ soma6.fim | mes }}): receitas <strong class="pago">{{ soma6.receitas | brl }}</strong> · despesas <strong style="color:#f87171">{{ soma6.despesas | brl }}</strong></p>
+    <p class="aviso">Últimos {{ antes }} meses ({{ soma6.inicio | mes }} a {{ soma6.fim | mes }}): receitas <strong class="pago">{{ soma6.receitas | brl }}</strong> · despesas <strong style="color:#f87171">{{ soma6.despesas | brl }}</strong></p>
     <div style="position:relative;height:240px"><canvas id="chartCategoria"></canvas></div>
   </div>
 
@@ -68,8 +68,18 @@ new Chart(document.getElementById('chartCategoria'), {
   data: {
     labels: G.labels,
     datasets: [
-      { label: 'Receitas', data: G.receitas, backgroundColor: '#34d399' },
-      { label: 'Despesas', data: G.despesas, backgroundColor: '#f87171' }
+      {
+        label: 'Receitas', data: G.receitas,
+        backgroundColor: G.futuro.map(f => f ? '#34d39966' : '#34d399'),
+        borderColor: G.atual.map(a => a ? '#e6e9ef' : 'transparent'),
+        borderWidth: G.atual.map(a => a ? 2 : 0)
+      },
+      {
+        label: 'Despesas', data: G.despesas,
+        backgroundColor: G.futuro.map(f => f ? '#f8717166' : '#f87171'),
+        borderColor: G.atual.map(a => a ? '#e6e9ef' : 'transparent'),
+        borderWidth: G.atual.map(a => a ? 2 : 0)
+      }
     ]
   },
   options: {

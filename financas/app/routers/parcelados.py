@@ -18,6 +18,7 @@ from app.services.parcelados import (
 )
 from app.services.cartoes import buscar_por_nome
 from app.services.settings import get_setting
+from app.services.tags import validar_categorias_livres
 from app.routers.importacao import MESES
 from app.services.util import current_month, parse_brl
 from app.web import RedirectResponse, templates
@@ -89,6 +90,10 @@ def create_installment(
         current_ref = f"{int(ano):04d}-{int(mes_num):02d}"
     except ValueError:
         return RedirectResponse("/parcelados?erro=mes", status_code=303)
+    try:
+        validar_categorias_livres(session, categorias)
+    except ValueError:
+        return RedirectResponse("/parcelados?erro=categoria", status_code=303)
 
     create_plan(
         session,
@@ -168,6 +173,10 @@ def editar_parcelado(
         raise HTTPException(status_code=404, detail="Parcelamento não encontrado")
     if not 0 <= due_day <= 31:
         raise HTTPException(status_code=400, detail="Dia do vencimento inválido")
+    try:
+        validar_categorias_livres(session, categorias)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     update_plan(session, plan, description, parse_brl(amount), due_day, categorias)
     session.commit()
     return RedirectResponse("/parcelados", status_code=303)

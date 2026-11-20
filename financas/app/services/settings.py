@@ -4,7 +4,7 @@ from sqlmodel import Session
 
 from app.models import Setting
 
-DEFAULTS = {"dia_padrao": "10"}
+DEFAULTS = {"dia_padrao": "10", "grafico_antes": "6", "grafico_depois": "3"}
 
 
 def get_setting(session: Session, key: str) -> str:
@@ -22,3 +22,12 @@ def set_setting(session: Session, key: str, value: str) -> None:
         s.value = value
     session.add(s)
     session.commit()
+
+
+def get_int_setting(session: Session, key: str, minimo: int, maximo: int) -> int:
+    """Lê uma configuração numérica. Valor inválido volta ao padrão; fora da faixa é ajustado."""
+    try:
+        valor = int(get_setting(session, key))
+    except ValueError:
+        valor = int(DEFAULTS[key])
+    return min(max(valor, minimo), maximo)

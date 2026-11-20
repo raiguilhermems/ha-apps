@@ -4,8 +4,15 @@ from datetime import date
 
 from sqlmodel import Session, select
 
-from app.models import Account, RecurringRule, Transaction, TransactionTag
-from app.services.tags import parse_tags, set_tags
+from app.models import Account, RecurringRule, Tag, Transaction, TransactionTag
+from app.services.tags import (
+    RECORRENTE,
+    nome_recorrente,
+    parse_tags,
+    reservar_categoria,
+    set_tags,
+    validar_categorias_livres,
+)
 from app.services.util import add_months, current_month, due_in_month, month_bounds
 
 
@@ -46,11 +53,53 @@ def create_rule(
         account_id=_account_for(session, kind, card_name),
         active=True,
         variable=variable,
-        tags_text=", ".join(parse_tags(categorias)),
+        tags_text="",
     )
     session.add(rule)
     session.flush()
+    aplicar_categoria(session, rule, categorias)
     return rule
+
+
+def _ids_da_regra(session: Session, rule_id: int) -> set[int]:
+    return set(
+        session.exec(select(Transaction.id).where(Transaction.recurring_rule_id == rule_id)).all()
+    )
+
+
+def aplicar_categoria(session: Session, rule: RecurringRule, categorias: str) -> None:
+    """Garante a categoria 'recorrente' da regra e grava as categorias dela (com a sua incluída).
+
+    Cria, promove (se a categoria só é usada por esta regra) ou renomeia a categoria.
+    Levanta ValueError, sem alterar nada, se houver conflito com outra categoria.
+    """
+    session.add(rule)
+    session.flush()  # garante rule.id
+    nome = nome_recorrente(rule.description)
+    validar_categorias_livres(session, categorias, proprio=nome)
+    tag = session.get(Tag, rule.tag_id) if rule.tag_id else None
+    if tag is not None and tag.name != nome:
+        outra = session.exec(select(Tag).where(Tag.name == nome, Tag.id != tag.id)).first()
+        if outra is not None:
+            raise ValueError(f"Já existe a categoria '{nome}'. Escolha outro nome para a recorrência.")
+        tag.name = nome
+        session.add(tag)
+        session.flush()
+    if tag is None:
+        # Categoria de recorrência é de uma regra só: nunca reaproveitar a de outra
+        existente = session.exec(select(Tag).where(Tag.name == nome)).first()
+        if existente is not None and existente.kind == RECORRENTE:
+            raise ValueError(f"Já existe a categoria '{nome}'. Escolha outro nome para a recorrência.")
+        tag = reservar_categoria(
+            session, nome, RECORRENTE, _ids_da_regra(session, rule.id), "a recorrência"
+        )
+    nomes = parse_tags(categorias)
+    if tag.name not in nomes:
+        nomes.append(tag.name)
+    rule.tag_id = tag.id
+    rule.tags_text = ", ".join(nomes)
+    session.add(rule)
+    session.flush()
 
 
 def generate_all(session: Session, months_ahead: int = 12) -> int:
@@ -61,6 +110,12 @@ def generate_all(session: Session, months_ahead: int = 12) -> int:
 
     rules = session.exec(select(RecurringRule).where(RecurringRule.active.is_(True))).all()
     for rule in rules:
+        if rule.tag_id is None:
+            # Recorrências antigas ganham a categoria; se houver conflito, ficam sem ela
+            try:
+                aplicar_categoria(session, rule, rule.tags_text)
+            except ValueError:
+                pass
         m = base
         if rule.generated_until:
             m = max(base, add_months(rule.generated_until, 1))
@@ -136,6 +191,11 @@ def delete_rule(session: Session, rule: RecurringRule) -> None:
         t.recurring_rule_id = None
         session.add(t)
     session.flush()
+    if rule.tag_id:
+        tag = session.get(Tag, rule.tag_id)
+        if tag is not None and tag.kind == RECORRENTE:
+            tag.kind = "categoria"
+            session.add(tag)
     session.delete(rule)
 
 

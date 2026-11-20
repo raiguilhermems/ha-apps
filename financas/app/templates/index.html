@@ -44,6 +44,7 @@
   <h2>Receitas × despesas por mês</h2>
   <div class="panel">
     <div style="position:relative;height:280px"><canvas id="chartMensal"></canvas></div>
+    <p class="muted" style="margin:.6rem 0 0">Barras mais claras são meses ainda não fechados. O contorno marca o mês atual.</p>
   </div>
 
   <h2>Novo lançamento</h2>
@@ -144,8 +145,18 @@ new Chart(document.getElementById('chartMensal'), {
   data: {
     labels: G.labels,
     datasets: [
-      { label: 'Receitas', data: G.receitas, backgroundColor: '#34d399' },
-      { label: 'Despesas', data: G.despesas, backgroundColor: '#f87171' }
+      {
+        label: 'Receitas', data: G.receitas,
+        backgroundColor: G.futuro.map(f => f ? '#34d39966' : '#34d399'),
+        borderColor: G.atual.map(a => a ? '#e6e9ef' : 'transparent'),
+        borderWidth: G.atual.map(a => a ? 2 : 0)
+      },
+      {
+        label: 'Despesas', data: G.despesas,
+        backgroundColor: G.futuro.map(f => f ? '#f8717166' : '#f87171'),
+        borderColor: G.atual.map(a => a ? '#e6e9ef' : 'transparent'),
+        borderWidth: G.atual.map(a => a ? 2 : 0)
+      }
     ]
   },
   options: {

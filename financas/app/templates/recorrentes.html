@@ -10,6 +10,9 @@
 {% include "_nav.html" %}
 <div class="wrap">
   <h1>Recorrentes</h1>
+  {% if erro %}
+  <div class="panel" style="border-color: var(--bad);"><strong>{{ erro }}</strong> Nada foi gravado.</div>
+  {% endif %}
   <p class="aviso">As regras geram lançamentos automaticamente nos próximos 12 meses. Dia 31 em um mês de 30 dias vira o último dia do mês. Valor variável: o valor de cada mês é uma estimativa. Ajuste o valor real no Início, em Editar, quando souber.</p>
 
   <h2>Nova recorrência</h2>
@@ -98,6 +101,7 @@
         {% for r in rows %}
     <tr class="linha-{{ r.rule.kind }}">
       <td class="desc">{{ r.rule.description }}
+        {% if not r.rule.tag_id %}<span class="pill bad" title="Há outra categoria com este nome. Renomeie a recorrência para criar a categoria.">sem categoria</span>{% endif %}
         {% for c in r.cats %}{% if c.id %}<a class="pill" href="{{ base() }}/categorias/{{ c.id }}">{{ c.nome }}</a>{% else %}<span class="pill">{{ c.nome }}</span>{% endif %}{% endfor %}</td>
       <td class="muted">{{ 'Despesa' if r.rule.kind == 'despesa' else 'Receita' }}</td>
       <td>

@@ -6,6 +6,80 @@ from sqlmodel import Session, select
 
 from app.models import Tag, Transaction, TransactionTag
 
+CATEGORIA = "categoria"
+PESSOA = "pessoa"
+RECORRENTE = "recorrente"
+
+
+def nome_recorrente(descricao: str) -> str:
+    """Nome da categoria de uma recorrência: minúsculo, sem vírgula nem espaço duplo."""
+    return " ".join(descricao.replace(",", " ").replace(";", " ").split()).lower()
+
+
+def tag_usada_fora(session: Session, tag_id: int, permitidos: set[int]) -> bool:
+    """True se a categoria está em algum lançamento que não está em `permitidos`."""
+    ids = session.exec(
+        select(TransactionTag.transaction_id).where(TransactionTag.tag_id == tag_id)
+    ).all()
+    return any(tid not in permitidos for tid in ids)
+
+
+def validar_categorias_livres(
+    session: Session, texto: str, proprio: str | None = None, tx_id: int | None = None
+) -> None:
+    """Categorias digitadas à mão não podem usar o nome de uma recorrência.
+
+    Ignora `proprio` (nome da própria regra) e categorias que já estão no lançamento `tx_id`,
+    para não bloquear a edição de um lançamento que veio de uma recorrência.
+    """
+    for nome in parse_tags(texto):
+        if nome == proprio:
+            continue
+        tag = session.exec(select(Tag).where(Tag.name == nome)).first()
+        if tag is None or tag.kind != RECORRENTE:
+            continue
+        if tx_id is not None and session.exec(
+            select(TransactionTag).where(
+                TransactionTag.transaction_id == tx_id, TransactionTag.tag_id == tag.id
+            )
+        ).first() is not None:
+            continue
+        raise ValueError(
+            f"'{nome}' é o nome de uma recorrência. Use outra categoria para este lançamento."
+        )
+
+
+def reservar_categoria(
+    session: Session, nome: str, kind: str, permitidos: set[int], rotulo: str
+) -> Tag:
+    """Devolve a categoria `nome` com o tipo `kind`, sem misturar donos.
+
+    - Não existe: cria com o tipo.
+    - Já tem o tipo: reaproveita.
+    - É categoria comum e só tem lançamentos de quem a reclama (`permitidos`): promove.
+    - Qualquer outro caso: ValueError, sem alterar nada.
+    """
+    tag = session.exec(select(Tag).where(Tag.name == nome)).first()
+    if tag is None:
+        tag = Tag(name=nome, kind=kind, excludes_from_total=False)
+        session.add(tag)
+        session.flush()
+        return tag
+    if tag.kind == kind:
+        return tag
+    # Pessoa reúne tudo do mesmo nome: categoria comum vira pessoa mesmo com outros lançamentos.
+    # Recorrente só aceita categoria que pertence só a ela.
+    usada_fora = kind != PESSOA and tag_usada_fora(session, tag.id, permitidos)
+    if tag.kind != CATEGORIA or tag.excludes_from_total or usada_fora:
+        raise ValueError(
+            f"Já existe a categoria '{nome}', que não pode ser usada para {rotulo}. "
+            "Escolha outro nome."
+        )
+    tag.kind = kind
+    session.add(tag)
+    session.flush()
+    return tag
+
 
 def parse_tags(text: str) -> list[str]:
     """'Mercado, lazer;  mercado' -> ['mercado', 'lazer']."""

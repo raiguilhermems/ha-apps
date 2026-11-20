@@ -22,6 +22,10 @@
   <div class="panel" style="border-color: var(--bad);">
     O arquivo escolhido não é um banco válido. Nada foi importado.
   </div>
+  {% elif erro == 'grafico' %}
+  <div class="panel" style="border-color: var(--bad);">
+    Antes: de 1 a 24 meses. Depois: de 0 a 12 meses. Nada foi salvo.
+  </div>
   {% endif %}
 
   <h2>Vencimento padrão</h2>
@@ -36,6 +40,16 @@
       <button type="submit" class="primary">Salvar</button>
     </form>
     <p class="aviso">O 1º dia útil considera segunda a sexta. Feriados ainda não entram no cálculo.</p>
+  </div>
+
+  <h2>Gráfico do Início</h2>
+  <div class="panel">
+    <form class="grid" method="post" action="{{ base() }}/configuracoes/grafico">
+      <label>Meses antes do mês de referência (1 a 24)<input type="number" name="antes" min="1" max="24" value="{{ grafico_antes }}" required></label>
+      <label>Meses depois (0 a 12)<input type="number" name="depois" min="0" max="12" value="{{ grafico_depois }}" required></label>
+      <button type="submit" class="primary">Salvar</button>
+    </form>
+    <p class="aviso">Define quantos meses aparecem antes e depois do mês de referência no gráfico do Início.</p>
   </div>
 
   <h2>Backup</h2>

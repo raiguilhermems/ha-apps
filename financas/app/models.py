@@ -18,7 +18,7 @@ class Tag(SQLModel, table=True):
     name: str = Field(unique=True)
     # Se True, lançamentos com esta tag não entram no total (ex.: gasto de terceiro)
     excludes_from_total: bool = False
-    kind: str = "categoria"  # categoria | pessoa (pessoa: quem deve ou deve a você)
+    kind: str = "categoria"  # categoria | pessoa (quem deve ou deve a você) | recorrente (gerada por uma recorrência)
 
 
 class RecurringRule(SQLModel, table=True):
@@ -34,6 +34,7 @@ class RecurringRule(SQLModel, table=True):
     generated_until: Optional[str] = None  # AAAA-MM, último mês já gerado
     variable: bool = False  # valor variável (estimativa)
     tags_text: str = ""
+    tag_id: Optional[int] = Field(default=None, foreign_key="tag.id")  # categoria da recorrência
 
 
 class InstallmentPlan(SQLModel, table=True):

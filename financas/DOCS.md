@@ -28,6 +28,8 @@ O saldo fica verde quando é positivo e vermelho quando é negativo.
 
 Use as setas do topo para navegar entre os meses.
 
+O gráfico mostra os meses antes e depois do mês em exibição, conforme a configuração em **Configurações**. Meses ainda não fechados aparecem em cor mais clara, e o mês atual tem contorno.
+
 ## Recorrentes
 
 Cadastre contas que se repetem todo mês. Escolha o valor, o vencimento e se é despesa ou receita.
@@ -43,6 +45,8 @@ Regras vinculadas a cartão não aparecem no Início. O valor delas já está na
 
 Quando você escolhe um cartão, o campo de vencimento some e a regra usa o dia de pagamento cadastrado no cartão.
 
+Cada recorrente vira uma categoria com o mesmo nome. Ela aparece em **Categorias** e tem link para ver a evolução mês a mês. Renomear a recorrente também renomeia a categoria. O nome de uma recorrente não pode ser usado em outra categoria, pessoa ou lançamento digitado à mão. Se a recorrente for excluída, a categoria continua no histórico como categoria comum.
+
 ## Parcelados
 
 Cadastre a compra com a descrição, a forma de pagamento, o valor de cada parcela, o total de parcelas e em qual parcela você está.
@@ -50,7 +54,7 @@ Cadastre a compra com a descrição, a forma de pagamento, o valor de cada parce
 - **Boleto, carnê, financiamento ou outro:** cada parcela entra automaticamente no Início, no mês de vencimento.
 - **Cartão:** as parcelas ficam só nesta aba, porque já estão na fatura. Marque cada parcela como paga quando a fatura for paga.
 
-O gráfico mostra quanto vence por mês nos próximos 12 meses. Parcelas anteriores ao mês do cadastro são consideradas pagas.
+O gráfico mostra quanto vence por mês nos próximos 12 meses, sem contar as parcelas a receber. Parcelas anteriores ao mês do cadastro são consideradas pagas.
 
 ### Compras de terceiros (a receber)
 
@@ -62,7 +66,7 @@ Crie categorias como mercado, luz ou lazer. Cada lançamento pode ter mais de um
 
 - **Não soma no total:** marque para categorias que não devem entrar no total do mês, como a categoria "terceiro".
 - **Ver lançamentos:** mostra tudo que tem aquela categoria no mês que está em exibição.
-- **Resumo dos 6 meses:** o rótulo acima do gráfico soma receitas e despesas dos 6 meses terminando no mês em exibição.
+- **Resumo dos meses:** o rótulo acima do gráfico soma receitas e despesas dos meses configurados (padrão 6), terminando no mês em exibição. O gráfico segue a mesma configuração.
 - **Editar:** muda o nome ou a regra de soma.
 - **Excluir:** remove a categoria dos lançamentos que a usavam. Os lançamentos continuam.
 
@@ -76,6 +80,7 @@ Cadastre caixinhas com nome, tipo e valor atual. Ao atualizar o valor, o histór
 
 ## Configurações
 
+- **Gráfico do Início:** quantos meses aparecem antes (1 a 24, padrão 6) e depois (0 a 12, padrão 3) do mês em exibição. Vale também para o gráfico das categorias.
 - **Vencimento padrão:** valor sugerido nos formulários de recorrentes e parcelados. Escolha **1º dia útil** ou um dia do mês. O 1º dia útil considera segunda a sexta, sem feriados.
 - **Baixar backup:** gera um arquivo com todos os dados. Use antes de atualizar o app ou apagar algo.
 - **Importar backup:** substitui todos os dados atuais pelos do arquivo escolhido. Antes, o app guarda uma cópia do banco atual.

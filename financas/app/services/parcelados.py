@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 
 from app.models import Account, InstallmentPlan, Tag, Transaction, TransactionTag
 from app.services.recurring import get_or_create_card
-from app.services.tags import get_or_create_tag, parse_tags, set_tags
+from app.services.tags import PESSOA, parse_tags, reservar_categoria, set_tags
 from app.services.util import add_months, current_month, due_in_month
 
 FORMAS = {
@@ -38,13 +38,46 @@ def _nome_pessoa(pessoa: str) -> str | None:
     return nomes[0] if nomes else None
 
 
+def ids_da_pessoa(session: Session, nome: str) -> set[int]:
+    """Lançamentos das compras a receber desta pessoa (são os únicos que podem ter a categoria dela)."""
+    planos = [
+        p.id
+        for p in session.exec(select(InstallmentPlan).where(InstallmentPlan.tipo == "receber")).all()
+        if _nome_pessoa(p.pessoa) == nome
+    ]
+    if not planos:
+        return set()
+    return set(
+        session.exec(
+            select(Transaction.id).where(Transaction.installment_plan_id.in_(planos))
+        ).all()
+    )
+
+
 def _garantir_pessoa(session: Session, nome: str) -> None:
-    """Cria a categoria como pessoa, ou promove uma categoria existente com o mesmo nome."""
-    tag = get_or_create_tag(session, nome, kind="pessoa")
-    if tag.kind != "pessoa":
-        tag.kind = "pessoa"
-        session.add(tag)
-        session.flush()
+    """Cria a categoria como pessoa, ou promove uma categoria comum que só é usada por ela."""
+    reservar_categoria(session, nome, PESSOA, ids_da_pessoa(session, nome), "a pessoa")
+
+
+def renomear_pessoa(session: Session, tag: Tag, nome_novo: str) -> None:
+    """Renomeia a pessoa: a categoria e os planos a receber dela acompanham o novo nome."""
+    antigo = tag.name
+    novo = _nome_pessoa(nome_novo)
+    if not novo:
+        raise ValueError("Informe o nome da pessoa")
+    tag.name = novo
+    session.add(tag)
+    session.flush()
+    planos = [
+        p
+        for p in session.exec(select(InstallmentPlan).where(InstallmentPlan.tipo == "receber")).all()
+        if _nome_pessoa(p.pessoa) == antigo
+    ]
+    for plan in planos:
+        plan.pessoa = " ".join(nome_novo.replace(",", " ").replace(";", " ").split())
+        # Tira o nome antigo das categorias do plano; update_plan põe o novo no lugar
+        categorias = ", ".join(n for n in parse_tags(plan.tags_text) if n != antigo)
+        update_plan(session, plan, plan.description, plan.installment_cents, plan.due_day, categorias)
 
 
 def _tags_do_plano(tipo: str, pessoa: str, categorias: str) -> list[str]:
