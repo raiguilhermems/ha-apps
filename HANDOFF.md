@@ -1,12 +1,14 @@
-# HANDOFF — Finanças (app de finanças pessoais para Home Assistant)
+# HANDOFF — FinHome (antes Finanças; app de finanças pessoais para Home Assistant)
 
-Use este arquivo para retomar o projeto em um novo chat. Estado em 21/11/2026 (0.0.22).
+Use este arquivo para retomar o projeto em um novo chat. Estado em 21/11/2026 (versão 2026.11.0).
 
 ## 1. Arquitetura e stack
 
 - **App:** FastAPI + SQLModel/SQLite + Jinja2 + Chart.js 4.4.1 (CDN jsDelivr). Tema escuro.
 - **Execução:** add-on do Home Assistant com ingress (sem login próprio). Produção em Raspberry Pi 4 (HAOS). Desenvolvimento em Windows e Linux com `uv`.
-- **Repositório:** `github.com/raiguilhermems/ha-apps`, app na pasta `financas/`. Dados em `/data/finance.db` dentro do add-on.
+- **Repositório:** `github.com/raiguilhermems/ha-apps`, app na pasta `financas/`. Nome do add-on: FinHome, slug `finhome` (desde 2026.11.0; antes era `financas`, e por isso a instalação é nova e o backup é importado). Dados em `/data/finance.db` dentro do add-on.
+- **Ícones:** `financas/icon.png` (loja e lista de apps) e `financas/logo.png`. O ícone inline do topo está em `_nav.html`.
+- **Versão:** esquema por data (ano.mês.número), por exemplo `2026.11.0`. A versão também fica em `app/web.py` (`APP_VERSION`) e aparece em Configurações. O teste `tests/test_versao.py` confere se é igual à do `config.yaml`.
 - **Dinheiro:** sempre em centavos (inteiro). Regime de caixa pela data de vencimento.
 - **Routers (uma tela cada):** lancamentos (Início), parcelados, importacao, categorias, recorrentes, cartoes, investimentos, configuracoes.
 - **Services:** parcelados, recurring, edit, summary, charts, tags, cartoes, fatura_nubank (leitor do CSV do Nubank), importacao, investimentos, settings, util.
@@ -72,6 +74,7 @@ Regras de nome:
   - Teste de rotas com `POST /configuracoes/grafico` incluído (`tests/test_rotas.py`).
   - `config.yaml` (0.0.21), `CHANGELOG.md`, `DOCS.md` e `README.md` atualizados.
   - Atenção: cria a coluna `recurring_rule.tag_id` (migração automática).
+- **Versão 2026.11.0 (nome FinHome, ícone e versão na tela):** nome, slug e títulos das telas trocados; ícone no topo e favicon (`_nav.html`, `_style.html`); versão em Configurações (`web.py`, `configuracoes.html`); menu reordenado (Início, Recorrentes, Parcelados, Investimentos, Categorias, Cartões, Configurações); espaço entre título e navegação de mês corrigido; `seed_demo.py` com cartões, pessoas a receber e recorrente pausada; scripts de demonstração funcionam sem `PYTHONPATH`.
 - **Versão 0.0.22 (visual e mensagens):** telas padronizadas (`_style.html`, `_macros.html`, `_chart.html`); ações das listas em ícones; erros de cadastro e edição em banner nas telas; confirmações de sucesso; capitalização (pessoa e recorrente em minúsculas, categoria como digitada); nome de categoria conferido com `reservar_categoria` ao criar; `ValueError` de parcelados, pessoa e lançamentos tratado como banner (sem 500); `tags_com_id_by_tx` e as categorias do plano e da recorrência trazem `kind`.
 - Início com receitas e despesas separadas, status, atrasados e gráfico.
 - Parcelados (pagar e receber), com edição e exclusão.
@@ -151,7 +154,7 @@ Combinado com o usuário: não fazer agora.
 
 Sempre que o usuário pedir para subir uma nova versão, o assistente faz tudo abaixo, na ordem:
 
-1. **Confirmar o número da versão** com o usuário. Padrão: próximo número de patch (0.0.21 → 0.0.22). Se a mudança for grande, perguntar se é versão menor.
+1. **Confirmar o número da versão** com o usuário. Padrão desde 2026.11.0: `ano.mês.número` (ex.: 2026.11.1 para a segunda entrega de novembro; 2026.12.0 para a primeira de dezembro). Não voltar para `0.0.x` ou `1.x`: o Home Assistant trata uma versão menor como downgrade e não oferece a atualização.
 2. **Pedir os arquivos reais** que vão mudar: `financas/config.yaml`, `financas/CHANGELOG.md`, `financas/README.md` (se mudar algo visível ao usuário), `financas/DOCS.md` (se mudar uso), e os arquivos de código alterados. Não usar repomix como base.
 3. **Atualizar `config.yaml`:** campo `version` com o número novo.
 4. **Atualizar `CHANGELOG.md`:** nova seção no topo, com número, data (dd/mm/aaaa) e lista curta do que mudou, em português, sem detalhes internos.

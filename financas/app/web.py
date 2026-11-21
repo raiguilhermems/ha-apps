@@ -8,6 +8,8 @@ from fastapi.templating import Jinja2Templates
 
 from app.services.util import add_months, current_month, fmt_brl, mes_curto
 
+APP_VERSION = "2026.11.0"
+
 _prefixo: ContextVar[str] = ContextVar("prefixo", default="")
 
 
@@ -26,3 +28,4 @@ templates.env.filters["mes"] = mes_curto
 templates.env.globals["base"] = lambda: _prefixo.get()
 templates.env.globals["mes_atual"] = current_month
 templates.env.globals["add_months"] = add_months
+templates.env.globals["versao"] = APP_VERSION

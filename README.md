@@ -1,4 +1,4 @@
-# Finanças
+# FinHome
 
 Controle financeiro pessoal para o Home Assistant. Roda como add-on, guarda os dados localmente em SQLite e abre pelo painel lateral do Home Assistant.
 
@@ -38,9 +38,10 @@ Controle financeiro pessoal para o Home Assistant. Roda como add-on, guarda os d
 
 1. Em **Configurações → Apps → Loja**, abra o menu ⋮ e clique em **Repositórios**.
 2. Adicione `https://github.com/raiguilhermems/ha-apps`.
-3. Instale **Finanças**, inicie e ative **Mostrar na barra lateral**.
+3. Instale **FinHome**, inicie e ative **Mostrar na barra lateral**.
 
-Antes de atualizar, baixe um backup em **Configurações**.
+Se você já tinha a versão antiga (identificador `financas`), baixe um backup em **Configurações** antes de desinstalar. Depois importe o backup no FinHome, na mesma tela.
+
 
 ## Desenvolvimento
 

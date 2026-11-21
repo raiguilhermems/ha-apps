@@ -1,6 +1,6 @@
-name: Finanças
-version: "0.0.22"
-slug: financas
+name: FinHome
+version: "2026.11.0"
+slug: finhome
 description: Controle financeiro pessoal local com gestão de receitas, despesas, parcelados, importação de fatura Nubank, cartões e investimentos.
 arch:
   - aarch64
@@ -11,5 +11,5 @@ init: false
 ingress: true
 ingress_port: 8099
 panel_icon: mdi:piggy-bank-outline
-panel_title: Finanças
+panel_title: FinHome
 panel_admin: false

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.11.0 — 21/11/2026
+
+- Novo nome: **FinHome**, com ícone próprio na loja de add-ons, na barra lateral e no topo de cada tela.
+- Versionamento por data (ano.mês.número). A versão atual aparece na tela de Configurações.
+- Atenção: o identificador do add-on mudou para `finhome`. Instale como um app novo. Antes de desinstalar a versão anterior, baixe o backup em Configurações, e depois importe-o no FinHome.
+
 ## 0.0.22 — 21/11/2026
 
 - Telas padronizadas: títulos, navegação de mês, cores, botões e nomes de status iguais em todas as telas.

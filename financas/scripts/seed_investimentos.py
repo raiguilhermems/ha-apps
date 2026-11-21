@@ -7,7 +7,12 @@ Se já existir alguma caixinha no banco, não altera nada.
 """
 
 import math
+import os
+import sys
 from datetime import date
+
+# Permite rodar de qualquer pasta, sem PYTHONPATH
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlmodel import select
 

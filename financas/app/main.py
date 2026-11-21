@@ -16,7 +16,7 @@ from app.routers import (
     parcelados,
     recorrentes,
 )
-from app.web import _prefixo
+from app.web import APP_VERSION, _prefixo
 
 
 @asynccontextmanager
@@ -25,7 +25,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Finanças", lifespan=lifespan)
+app = FastAPI(title="FinHome", version=APP_VERSION, lifespan=lifespan)
 
 
 PADRAO_INGRESS = re.compile(r"/api/hassio_ingress/[A-Za-z0-9_-]+")

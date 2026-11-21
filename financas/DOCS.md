@@ -1,4 +1,4 @@
-# Finanças
+# FinHome
 
 Painel de finanças pessoais. Abra pela barra lateral do Home Assistant.
 
