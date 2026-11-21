@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Prévia da importação</title>
+  <title>Prévia da importação · Finanças</title>
   {% include "_style.html" %}
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
-  <p><a href="{{ base() }}/parcelados/importar">‹ Voltar</a></p>
+  {{ m.voltar(base() ~ '/parcelados/importar') }}
   <h1>Prévia da importação</h1>
   <datalist id="pessoas">{% for n in pessoas or [] %}<option value="{{ n }}">{% endfor %}</datalist>
   <p class="muted">Cartão: <strong>{{ cartao }}</strong> · Vencimento: <strong>{{ vencimento.strftime('%d/%m/%Y') }}</strong></p>
@@ -24,7 +25,7 @@
     <div class="panel">
       <table>
         <thead>
-          <tr><th>Incluir</th><th>Compra</th><th>Nome exibido</th><th>Parcela</th><th>Valor</th><th>Categorias</th><th>Situação</th><th>De outra pessoa</th></tr>
+          <tr><th>Incluir</th><th class="desc">Compra</th><th class="desc">Nome exibido</th><th>Parcela</th><th>Valor</th><th class="desc">Categorias</th><th>Situação</th><th class="desc">De outra pessoa</th></tr>
         </thead>
         <tbody>
         {% for r in previa %}
@@ -41,22 +42,22 @@
             <input type="hidden" name="status_{{ i }}" value="{{ r.status }}">
             <input type="hidden" name="plano_{{ i }}" value="{{ r.plano_id or '' }}">
           </td>
-          <td class="muted">{{ r.linha.data.strftime('%d/%m') }} · {{ r.linha.nome_original }}</td>
-          <td><input name="nome_{{ i }}" value="{{ r.nome }}" style="width:100%"></td>
+          <td class="desc muted">{{ r.linha.data.strftime('%d/%m') }} · {{ r.linha.nome_original }}</td>
+          <td class="desc"><input name="nome_{{ i }}" value="{{ r.nome }}"></td>
           <td>{{ r.linha.parcela }}/{{ r.linha.total }}</td>
           <td>{{ r.linha.valor_cents | brl }}</td>
-          <td><input name="categorias_{{ i }}" placeholder="mercado, lazer" style="width:100%"></td>
-          <td>
+          <td class="desc"><input name="categorias_{{ i }}" placeholder="mercado, lazer"></td>
+          <td class="status">
             {% if r.status == 'nova' %}<span class="pill ok">nova</span>
             {% elif r.status == 'existente' %}
               <span class="pill">já cadastrada</span><br>
               <label class="check"><input type="checkbox" name="atualizar_{{ i }}"> atualizar</label>
             {% else %}<span class="pill bad">ignorada antes</span>{% endif %}
           </td>
-          <td>
+          <td class="desc">
             <label class="check"><input type="checkbox" name="terceiro_{{ i }}" {% if r.terceiro %}checked{% endif %}> de outra pessoa</label>
-            <div id="pessoa-{{ i }}" style="margin-top:.3rem">
-              <input name="pessoa_{{ i }}" value="{{ r.pessoa }}" placeholder="Quem paga" list="pessoas" style="width:100%">
+            <div id="pessoa-{{ i }}" class="campo-pessoa">
+              <input name="pessoa_{{ i }}" value="{{ r.pessoa }}" placeholder="Quem paga" list="pessoas">
               {% if r.status == 'existente' %}<small class="muted">Converte o parcelado de cartão em a receber.</small>
               {% elif r.status == 'ignorada' %}<small class="muted">Cadastra como a receber.</small>{% endif %}
             </div>
@@ -67,7 +68,7 @@
       </table>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;margin-top:1rem"><button type="submit" class="primary">Gravar importação</button></div>
+    <div class="barra-final"><button type="submit" class="primary">Gravar importação</button></div>
   </form>
 </div>
 <script>

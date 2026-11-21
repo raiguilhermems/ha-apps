@@ -3,43 +3,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Importar fatura</title>
+  <title>Importar fatura · Finanças</title>
   {% include "_style.html" %}
-  <style>
-    .import-form { display: flex; flex-wrap: wrap; gap: 1rem 1.25rem; align-items: flex-end; }
-    .import-form label { display: flex; flex-direction: column; gap: .35rem; flex: 1 1 13rem; min-width: 0; }
-    .import-form label.campo-arquivo { flex: 2 1 18rem; }
-    .import-form input, .import-form select { width: 100%; box-sizing: border-box; }
-    .import-form .dica { flex: 1 1 100%; margin: 0; }
-    .import-form .acao { flex: 1 1 100%; display: flex; justify-content: flex-end; }
-  </style>
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
-  <p><a href="{{ base() }}/parcelados">‹ Parcelados</a></p>
+  {{ m.voltar(base() ~ '/parcelados') }}
   <h1>Importar fatura do Nubank</h1>
 
-  {% if erro %}
-  <div class="panel" style="border-color: var(--bad);"><strong>{{ erro }}</strong></div>
-  {% endif %}
+  {% if erro %}{{ m.erro(erro) }}{% endif %}
 
   <div class="panel">
-    <form class="import-form" method="post" action="{{ base() }}/parcelados/importar/previa" enctype="multipart/form-data">
-      <label class="campo-arquivo">Arquivo CSV da fatura<input type="file" name="arquivo" accept=".csv,text/csv" required></label>
-      <label>Mês ano da fatura
-        <span style="display:flex;gap:.5rem">
-          <select name="mes_num" style="flex:1">{% for num, nome in meses %}<option value="{{ num }}"{% if num == mes_atual_num %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select>
-          <select name="ano" style="flex:1">{% for a in anos %}<option value="{{ a }}"{% if a == ano_atual %} selected{% endif %}>{{ a }}</option>{% endfor %}</select>
+    <form class="grid" style="--cols: 4" method="post" action="{{ base() }}/parcelados/importar/previa" enctype="multipart/form-data">
+      <label class="span2">Arquivo CSV da fatura<input type="file" name="arquivo" accept=".csv,text/csv" required></label>
+      <label class="span2">Mês e ano da fatura
+        <span class="duo">
+          <select name="mes_num">{% for num, nome in meses %}<option value="{{ num }}"{% if num == mes_atual_num %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select>
+          <select name="ano">{% for a in anos %}<option value="{{ a }}"{% if a == ano_atual %} selected{% endif %}>{{ a }}</option>{% endfor %}</select>
         </span>
       </label>
-      <label>Cartão da lista
+      <p class="aviso todo">Cartão novo? Preencha os dois campos da direita. Ele é criado ao continuar.</p>
+      <label>Cartão cadastrado
         <select name="cartao_id">
-          <option value="">— escolher —</option>
+          <option value="">— nenhum —</option>
           {% for c in cartoes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
         </select>
       </label>
-      <p class="muted dica">Cartão novo? Preencha os dois campos abaixo. Ele é criado ao continuar.</p>
       <label>Nome do cartão novo<input name="novo_nome" placeholder="Nubank"></label>
       <label>Dia de pagamento (cartão novo)<input name="novo_dia" type="number" min="1" max="31" placeholder="5"></label>
       <div class="acao"><button type="submit" class="primary">Ver prévia</button></div>

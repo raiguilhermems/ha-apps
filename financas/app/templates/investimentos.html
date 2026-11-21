@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Investimentos</title>
+  <title>Investimentos · Finanças</title>
   {% include "_style.html" %}
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
   <h1>Investimentos</h1>
-  {% if erro %}
-  <div class="panel" style="border-color: var(--bad);">{{ erro }}</div>
-  {% endif %}
+
+  {% if erro %}{{ m.erro(erro) }}{% endif %}
 
   <section class="cards">
     <div class="card"><small>Total investido</small><div class="val">{{ total | brl }}</div></div>
@@ -22,7 +22,7 @@
   <h2>Evolução do total</h2>
   <div class="panel">
     {% if grafico.labels %}
-    <div style="position:relative;height:260px"><canvas id="chartInv"></canvas></div>
+    <div class="chart"><canvas id="chartInv"></canvas></div>
     {% else %}
     <p class="muted">Cadastre uma caixinha para ver a evolução.</p>
     {% endif %}
@@ -30,7 +30,7 @@
 
   <h2>Nova caixinha</h2>
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/investimentos">
+    <form class="grid" style="--cols: 4" method="post" action="{{ base() }}/investimentos">
       <label>Nome<input name="nome" required placeholder="Tesouro Selic"></label>
       <label>Tipo
         <select name="tipo">
@@ -38,52 +38,53 @@
         </select>
       </label>
       <label>Valor atual (R$)<input name="valor" placeholder="1.000,00" required></label>
-      <button type="submit" class="primary">Cadastrar</button>
+      <button type="submit" class="primary">Adicionar</button>
     </form>
   </div>
 
   <h2>Caixinhas</h2>
   {% if invs %}
-  <table>
-    <thead><tr><th>Nome</th><th>Tipo</th><th>Valor atual</th><th>Atualizado em</th><th>Ações</th></tr></thead>
-    <tbody>
-    {% for i in invs %}
-    <tr>
-      <td class="nome-caixinha"><a href="{{ base() }}/investimentos/{{ i.id }}">{{ i.nome }}</a></td>
-      <td class="muted">{{ tipos.get(i.tipo, i.tipo) }}</td>
-      <td>{{ i.valor_cents | brl }}</td>
-      <td>{{ i.atualizado_em.strftime('%d/%m/%Y') }}</td>
-      <td style="white-space: nowrap;">
-        <form class="inline" method="post" action="{{ base() }}/investimentos/{{ i.id }}/valor">
-          <input name="valor" placeholder="Valor atualizado" required class="campo-valor">
-          <input type="date" name="data" value="{{ hoje }}" class="campo-data">
-          <button type="submit" class="small">Atualizar</button>
-        </form>
-        <form class="inline" method="post" action="{{ base() }}/investimentos/{{ i.id }}/excluir" onsubmit="return confirm('Excluir esta caixinha e todo o histórico dela?')">
-          <button type="submit" class="danger small">Excluir</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <div class="panel">
+    <table>
+      <thead><tr><th class="desc">Nome</th><th>Tipo</th><th>Valor atual</th><th>Atualizado em</th><th>Ações</th></tr></thead>
+      <tbody>
+      {% for i in invs %}
+      <tr>
+        <td class="nome-caixinha"><a href="{{ base() }}/investimentos/{{ i.id }}">{{ i.nome }}</a></td>
+        <td class="muted">{{ tipos.get(i.tipo, i.tipo) }}</td>
+        <td>{{ i.valor_cents | brl }}</td>
+        <td>{{ i.atualizado_em.strftime('%d/%m/%Y') }}</td>
+        <td class="col-estreita">
+          <div class="acoes">
+            <form class="inline" method="post" action="{{ base() }}/investimentos/{{ i.id }}/valor">
+              <input name="valor" placeholder="Novo valor" required class="campo-valor" aria-label="Novo valor">
+              <input type="date" name="data" value="{{ hoje }}" class="campo-data" aria-label="Data do valor">
+              <button type="submit" class="icon" title="Atualizar" aria-label="Atualizar">{{ m.icone('atualizar') }}</button>
+            </form>
+            <a class="btn icon" href="{{ base() }}/investimentos/{{ i.id }}#editar" title="Editar" aria-label="Editar">{{ m.icone('editar') }}</a>
+            <form class="inline" method="post" action="{{ base() }}/investimentos/{{ i.id }}/excluir" onsubmit="return confirm('Excluir esta caixinha e todo o histórico dela?')">
+              <button type="submit" class="icon danger" title="Excluir" aria-label="Excluir">{{ m.icone('excluir') }}</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
   <p class="muted">Nenhuma caixinha cadastrada.</p>
   {% endif %}
 </div>
 
 {% if grafico.labels %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+{% include "_chart.html" %}
 <script>
-Chart.defaults.color = '#9aa3b2';
-Chart.defaults.borderColor = '#2a2f3a';
-const reais = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-const G = {{ grafico | tojson }};
 new Chart(document.getElementById('chartInv'), {
   type: 'line',
   data: {
-    labels: G.labels,
-    datasets: [{ label: 'Total investido', data: G.valores, borderColor: '#4f8cff', backgroundColor: 'rgba(79,140,255,0.15)', fill: true, tension: 0.25 }]
+    labels: {{ grafico.labels | tojson }},
+    datasets: [{ label: 'Total investido', data: {{ grafico.valores | tojson }}, borderColor: '#4f8cff', backgroundColor: 'rgba(79,140,255,0.15)', fill: true, tension: 0.25 }]
   },
   options: {
     maintainAspectRatio: false,

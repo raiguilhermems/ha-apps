@@ -16,11 +16,12 @@ Painel de finanças pessoais. Abra pela barra lateral do Home Assistant.
 
 Use **Novo lançamento** para cadastrar uma receita ou despesa avulsa. Escolha a data de vencimento. No campo **Terceiros**, informe a parte que é de outra pessoa: ela sai do total e o restante fica como sua despesa. Use **Categorias** para agrupar, separando por vírgula.
 
-Na lista do mês, o botão muda conforme o tipo:
+Na lista do mês, cada lançamento tem ícones de ação. Passe o mouse sobre um ícone para ver o nome da ação. O ícone de estado muda conforme o tipo:
 
-- Despesa: **Marcar pago**. Enquanto não for paga e já passou do vencimento, aparece como **atrasado**.
-- Receita: **Marcar recebido**. Receita nunca aparece como atrasada: ela fica como **a receber** até entrar.
-- **Desfazer** volta o lançamento para pendente.
+- Despesa: ícone de check, **Marcar pago**. Enquanto não for paga e já passou do vencimento, aparece como **atrasado**.
+- Receita: ícone de check, **Marcar recebido**. Receita nunca aparece como atrasada: ela fica como **a receber** até entrar.
+- **Desfazer** (seta para trás) volta o lançamento para pendente.
+- **Editar** (lápis) e **Excluir** (lixeira) ficam ao lado de cada lançamento.
 
 O símbolo ↻ indica um lançamento que veio de uma recorrência.
 
@@ -58,7 +59,7 @@ O gráfico mostra quanto vence por mês nos próximos 12 meses, sem contar as pa
 
 ### Compras de terceiros (a receber)
 
-Quando você compra no cartão para outra pessoa, que vai devolver o valor, marque a compra como **de outra pessoa** na prévia da importação da fatura e informe quem vai pagar. Essa compra não vira parcelado: ela aparece em **Parcelados → A receber**. Cada parcela entra como receita no mês do recebimento, e o botão **Marcar recebida** registra o pagamento. O dia de recebimento padrão é o dia da fatura; é possível ajustá-lo em **Editar**.
+Quando você compra no cartão para outra pessoa, que vai devolver o valor, marque a compra como **de outra pessoa** na prévia da importação da fatura e informe quem vai pagar. Essa compra não vira parcelado: ela aparece em **Parcelados → A receber**. Cada parcela entra como receita no mês do recebimento, e o botão **Marcar recebido** registra o pagamento. O dia de recebimento padrão é o dia da fatura; é possível ajustá-lo em **Editar**.
 
 ## Categorias
 

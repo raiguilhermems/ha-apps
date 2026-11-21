@@ -3,35 +3,32 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Configurações</title>
+  <title>Configurações · Finanças</title>
   {% include "_style.html" %}
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
   <h1>Configurações</h1>
-  {% if erro == 'apagar' %}
-  <div class="panel" style="border-color: var(--bad);">
-    Para apagar, digite APAGAR exatamente como está. Nada foi apagado.
-  </div>
-  {% elif erro == 'tamanho' %}
-  <div class="panel" style="border-color: var(--bad);">
-    O arquivo passa do limite de 50 MB. Nada foi importado.
-  </div>
-  {% elif erro == 'arquivo' %}
-  <div class="panel" style="border-color: var(--bad);">
-    O arquivo escolhido não é um banco válido. Nada foi importado.
-  </div>
-  {% elif erro == 'grafico' %}
-  <div class="panel" style="border-color: var(--bad);">
-    Antes: de 1 a 24 meses. Depois: de 0 a 12 meses. Nada foi salvo.
-  </div>
-  {% endif %}
+
+  {% set msgs = {
+    'apagar': 'Para apagar, digite APAGAR exatamente como está. Nada foi apagado.',
+    'tamanho': 'O arquivo passa do limite de 50 MB. Nada foi importado.',
+    'arquivo': 'O arquivo escolhido não é um banco válido. Nada foi importado.',
+    'grafico': 'Antes: de 1 a 24 meses. Depois: de 0 a 12 meses. Nada foi salvo.',
+    'dia': 'Use 1º dia útil ou um dia de 1 a 31. Nada foi salvo.',
+  } %}
+  {% if erro %}{{ m.erro(msgs.get(erro, erro)) }}{% endif %}
+  {% if ok == 'dia' %}{{ m.sucesso('Vencimento padrão salvo.') }}{% endif %}
+  {% if ok == 'grafico' %}{{ m.sucesso('Configuração do gráfico salva.') }}{% endif %}
+  {% if ok == 'importado' %}{{ m.sucesso('Backup importado. O banco anterior ficou guardado como finance-antes-da-importacao.db.') }}{% endif %}
+  {% if ok == 'apagado' %}{{ m.sucesso('Todos os dados foram apagados.') }}{% endif %}
 
   <h2>Vencimento padrão</h2>
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/configuracoes/dia_padrao">
-      <label>Sugestão ao cadastrar recorrentes e parcelados
+    <form class="grid" style="--cols: 3" method="post" action="{{ base() }}/configuracoes/dia_padrao">
+      <label class="span2">Sugestão ao cadastrar recorrentes e parcelados
         <select name="dia">
           <option value="0" {{ 'selected' if dia_padrao == 0 }}>1º dia útil</option>
           {% for d in range(1, 32) %}<option value="{{ d }}" {{ 'selected' if d == dia_padrao }}>Dia {{ d }}</option>{% endfor %}
@@ -44,8 +41,8 @@
 
   <h2>Gráfico do Início</h2>
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/configuracoes/grafico">
-      <label>Meses antes do mês de referência (1 a 24)<input type="number" name="antes" min="1" max="24" value="{{ grafico_antes }}" required></label>
+    <form class="grid" style="--cols: 3" method="post" action="{{ base() }}/configuracoes/grafico">
+      <label>Meses antes (1 a 24)<input type="number" name="antes" min="1" max="24" value="{{ grafico_antes }}" required></label>
       <label>Meses depois (0 a 12)<input type="number" name="depois" min="0" max="12" value="{{ grafico_depois }}" required></label>
       <button type="submit" class="primary">Salvar</button>
     </form>
@@ -56,9 +53,9 @@
   <div class="panel">
     <p class="aviso">Banco atual: {{ tamanho_mb }} MB. Baixe um backup antes de importar ou apagar qualquer coisa.</p>
     <p><a class="btn primary" href="{{ base() }}/configuracoes/backup">Baixar backup</a></p>
-    <form class="grid" method="post" action="{{ base() }}/configuracoes/importar" enctype="multipart/form-data"
+    <form class="grid" style="--cols: 3" method="post" action="{{ base() }}/configuracoes/importar" enctype="multipart/form-data"
           onsubmit="return confirm('Importar este backup substitui todos os dados atuais. Continuar?')">
-      <label>Arquivo de backup (.db)<input type="file" name="arquivo" accept=".db" required></label>
+      <label class="span2">Arquivo de backup (.db)<input type="file" name="arquivo" accept=".db" required></label>
       <button type="submit">Importar backup</button>
     </form>
     <p class="aviso">Antes de importar, o app guarda uma cópia do banco atual como <code>finance-antes-da-importacao.db</code>.</p>
@@ -67,9 +64,9 @@
   <h2>Apagar dados</h2>
   <div class="panel">
     <p class="aviso">Apaga lançamentos, recorrentes, parcelados, categorias e cartões. Não pode ser desfeito.</p>
-    <form class="grid" method="post" action="{{ base() }}/configuracoes/apagar"
+    <form class="grid" style="--cols: 3" method="post" action="{{ base() }}/configuracoes/apagar"
           onsubmit="return confirm('Tem certeza que quer apagar todos os dados?')">
-      <label>Digite APAGAR para confirmar<input name="confirmacao" autocomplete="off" required></label>
+      <label class="span2">Digite APAGAR para confirmar<input name="confirmacao" autocomplete="off" required></label>
       <button type="submit" class="danger">Apagar tudo</button>
     </form>
   </div>

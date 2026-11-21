@@ -6,7 +6,7 @@ import sqlite3
 from datetime import date
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse
 from sqlmodel import Session, SQLModel
 
@@ -42,7 +42,12 @@ def _banco_valido(caminho: Path) -> bool:
 
 
 @router.get("/configuracoes")
-def configuracoes_page(request: Request, erro: str | None = None, session: Session = Depends(get_session)):
+def configuracoes_page(
+    request: Request,
+    erro: str | None = None,
+    ok: str | None = None,
+    session: Session = Depends(get_session),
+):
     tamanho = DB_PATH.stat().st_size / 1024 / 1024 if DB_PATH.exists() else 0
     return templates.TemplateResponse(
         request,
@@ -50,6 +55,7 @@ def configuracoes_page(request: Request, erro: str | None = None, session: Sessi
         {
             "tamanho_mb": f"{tamanho:.2f}".replace(".", ","),
             "erro": erro,
+            "ok": ok,
             "dia_padrao": int(get_setting(session, "dia_padrao")),
             "grafico_antes": get_int_setting(session, "grafico_antes", 1, 24),
             "grafico_depois": get_int_setting(session, "grafico_depois", 0, 12),
@@ -84,7 +90,7 @@ async def importar_backup(arquivo: UploadFile = File(...)):
         init_db()
     finally:
         temporario.unlink(missing_ok=True)
-    return RedirectResponse("/configuracoes", status_code=303)
+    return RedirectResponse("/configuracoes?ok=importado", status_code=303)
 
 
 @router.post("/configuracoes/apagar")
@@ -96,15 +102,15 @@ def apagar_dados(confirmacao: str = Form(...), session: Session = Depends(get_se
             continue
         session.execute(table.delete())
     session.commit()
-    return RedirectResponse("/configuracoes", status_code=303)
+    return RedirectResponse("/configuracoes?ok=apagado", status_code=303)
 
 
 @router.post("/configuracoes/dia_padrao")
 def salvar_dia_padrao(dia: int = Form(...), session: Session = Depends(get_session)):
     if not 0 <= dia <= 31:
-        raise HTTPException(status_code=400, detail="Use 0 (1º dia útil) ou de 1 a 31")
+        return RedirectResponse("/configuracoes?erro=dia", status_code=303)
     set_setting(session, "dia_padrao", str(dia))
-    return RedirectResponse("/configuracoes", status_code=303)
+    return RedirectResponse("/configuracoes?ok=dia", status_code=303)
 
 
 @router.post("/configuracoes/grafico")
@@ -113,4 +119,4 @@ def salvar_grafico(antes: int = Form(...), depois: int = Form(...), session: Ses
         return RedirectResponse("/configuracoes?erro=grafico", status_code=303)
     set_setting(session, "grafico_antes", str(antes))
     set_setting(session, "grafico_depois", str(depois))
-    return RedirectResponse("/configuracoes", status_code=303)
+    return RedirectResponse("/configuracoes?ok=grafico", status_code=303)

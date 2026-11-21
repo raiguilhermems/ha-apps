@@ -34,8 +34,8 @@ def _dia_efetivo(session: Session, kind: str, card_name: str, day: int) -> int:
     return day
 
 
-def _erro(mensagem: str) -> RedirectResponse:
-    return RedirectResponse(f"/recorrentes?erro={quote(mensagem)}", status_code=303)
+def _erro(mensagem: str, destino: str = "/recorrentes") -> RedirectResponse:
+    return RedirectResponse(f"{destino}?erro={quote(mensagem)}", status_code=303)
 
 
 @router.get("/recorrentes")
@@ -43,15 +43,23 @@ def recorrentes_page(
     request: Request,
     mes: str | None = None,
     erro: str | None = None,
+    ok: str | None = None,
     session: Session = Depends(get_session),
 ):
     ref = mes or current_month()
     rules = session.exec(select(RecurringRule).order_by(RecurringRule.description)).all()
-    ids = {c.name: c.id for c in session.exec(select(Tag)).all()}
+    tags_por_nome = {c.name: c for c in session.exec(select(Tag)).all()}
     rows = []
     for r in rules:
         card = session.get(Account, r.account_id) if r.account_id else None
-        cats = [{"nome": n, "id": ids.get(n)} for n in parse_tags(r.tags_text)]
+        cats = [
+            {
+                "nome": n,
+                "id": tags_por_nome[n].id if n in tags_por_nome else None,
+                "kind": tags_por_nome[n].kind if n in tags_por_nome else "categoria",
+            }
+            for n in parse_tags(r.tags_text)
+        ]
         rows.append({"rule": r, "cartao": card.name if card else "—", "cats": cats})
     rows.sort(key=lambda r: (r["rule"].kind != "receita", r["rule"].description.lower()))
     verif = rule_month_status(session, ref)
@@ -66,6 +74,7 @@ def recorrentes_page(
             "next": add_months(ref, 1),
             "rows": rows,
             "erro": erro,
+            "ok": ok,
             "cards": cards,
             "verif": verif,
             "dia_padrao": int(get_setting(session, "dia_padrao")),
@@ -86,7 +95,7 @@ def create_recurring(
     session: Session = Depends(get_session),
 ):
     if not 0 <= day <= 31:
-        raise HTTPException(status_code=400, detail="Dia do mês deve estar entre 1 e 31")
+        return _erro("Dia do mês deve estar entre 1 e 31.")
     day = _dia_efetivo(session, kind, card_name, day)
     try:
         create_rule(session, description, parse_brl(amount), day, kind, card_name, variable, categorias)
@@ -95,11 +104,16 @@ def create_recurring(
         return _erro(str(e))
     session.commit()
     generate_all(session)
-    return RedirectResponse("/recorrentes", status_code=303)
+    return RedirectResponse("/recorrentes?ok=criada", status_code=303)
 
 
 @router.get("/recorrentes/{rule_id}/editar")
-def edit_recurring_page(rule_id: int, request: Request, session: Session = Depends(get_session)):
+def edit_recurring_page(
+    rule_id: int,
+    request: Request,
+    erro: str | None = None,
+    session: Session = Depends(get_session),
+):
     rule = session.get(RecurringRule, rule_id)
     if rule is None:
         raise HTTPException(status_code=404, detail="Recorrência não encontrada")
@@ -111,7 +125,13 @@ def edit_recurring_page(rule_id: int, request: Request, session: Session = Depen
     return templates.TemplateResponse(
         request,
         "editar_recorrente.html",
-        {"rule": rule, "card_name": card.name if card else "", "cards": cards, "categorias": categorias},
+        {
+            "rule": rule,
+            "card_name": card.name if card else "",
+            "cards": cards,
+            "categorias": categorias,
+            "erro": erro,
+        },
     )
 
 
@@ -130,16 +150,17 @@ def edit_recurring(
     rule = session.get(RecurringRule, rule_id)
     if rule is None:
         raise HTTPException(status_code=404, detail="Recorrência não encontrada")
+    destino = f"/recorrentes/{rule_id}/editar"
     if not 0 <= day <= 31:
-        raise HTTPException(status_code=400, detail="Dia do mês deve estar entre 1 e 31")
+        return _erro("Dia do mês deve estar entre 1 e 31.", destino)
     day = _dia_efetivo(session, kind, card_name, day)
     try:
         update_rule(session, rule, description, parse_brl(amount), day, kind, card_name, variable, categorias)
     except ValueError as e:
         session.rollback()
-        return _erro(str(e))
+        return _erro(str(e), destino)
     session.commit()
-    return RedirectResponse("/recorrentes", status_code=303)
+    return RedirectResponse("/recorrentes?ok=salva", status_code=303)
 
 
 @router.post("/recorrentes/{rule_id}/ativar")

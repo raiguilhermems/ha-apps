@@ -164,16 +164,16 @@ def mark_third_party(session: Session, tx: Transaction) -> None:
 
 
 def tags_com_id_by_tx(session: Session, tx_ids: list[int]) -> dict[int, list[dict]]:
-    """Como tags_by_tx, mas cada categoria vem como {"id": ..., "name": ...} (para os links)."""
+    """Como tags_by_tx, mas cada categoria vem como {"id", "name", "kind"} (para os links e a capitalização)."""
     if not tx_ids:
         return {}
     rows = session.exec(
-        select(TransactionTag.transaction_id, Tag.id, Tag.name).where(
+        select(TransactionTag.transaction_id, Tag.id, Tag.name, Tag.kind).where(
             Tag.id == TransactionTag.tag_id,
             TransactionTag.transaction_id.in_(tx_ids),
         )
     ).all()
     out: dict[int, list[dict]] = {}
-    for tid, tag_id, name in rows:
-        out.setdefault(tid, []).append({"id": tag_id, "name": name})
+    for tid, tag_id, name, kind in rows:
+        out.setdefault(tid, []).append({"id": tag_id, "name": name, "kind": kind})
     return out

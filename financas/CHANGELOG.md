@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.0.22 — 21/11/2026
+
+- Telas padronizadas: títulos, navegação de mês, cores, botões e nomes de status iguais em todas as telas.
+- Ações das listas com ícones do mesmo tamanho: marcar pago ou recebido, desfazer, pausar ou ativar, editar, excluir e atualizar. Ao passar o mouse, aparece o nome da ação.
+- Erros de cadastro e de edição aparecem como aviso na própria tela, em vez de mensagem técnica.
+- Confirmação ao criar, salvar ou excluir categorias, recorrentes, cartões e configurações.
+- Pessoas e recorrentes aparecem em minúsculas. Categorias mantêm o nome como foi digitado.
+- Não é mais possível criar uma categoria com o nome de uma pessoa ou recorrente já existente. O app avisa e não grava nada.
+- Investimentos: lista mais compacta, com o botão Editar.
+- Parcelados: a mensagem de categoria repetida agora mostra o motivo.
+
 ## 0.0.21
 
 - Recorrentes viram categorias automaticamente, com link para ver a evolução mês a mês. Renomear a recorrente renomeia a categoria.

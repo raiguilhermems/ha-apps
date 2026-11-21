@@ -3,99 +3,112 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Categorias</title>
+  <title>Categorias · Finanças</title>
   {% include "_style.html" %}
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
   <h1>Categorias</h1>
+
+  {% if erro %}{{ m.erro(erro) }}{% endif %}
+  {% if ok == 'criada' %}{{ m.sucesso('Categoria criada.') }}{% endif %}
+  {% if ok == 'salva' %}{{ m.sucesso('Categoria atualizada.') }}{% endif %}
+  {% if ok == 'excluida' %}{{ m.sucesso('Categoria excluída. Ela saiu de todos os lançamentos.') }}{% endif %}
+
   <p class="aviso">Use categorias para agrupar lançamentos, como mercado, luz ou lazer. Marque "Não soma no total" para que os lançamentos da categoria saiam do total do mês, como ocorre com terceiros. Pessoas são criadas automaticamente nas compras a receber e reúnem tudo que cada uma deve.</p>
 
   <h2>Nova categoria</h2>
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/categorias">
-      <label>Nome<input name="name" placeholder="ex.: mercado" required></label>
+    <form class="grid" style="--cols: 5" method="post" action="{{ base() }}/categorias">
+      <label class="span2">Nome<input name="name" placeholder="ex.: mercado" required></label>
       <label>Tipo
         <select name="tipo">
           <option value="categoria">Categoria</option>
           <option value="pessoa">Pessoa</option>
         </select>
       </label>
-      <label class="check" style="align-self: end; height: 2.4rem; display: flex; align-items: center;"><input type="checkbox" name="excludes"> Não soma no total</label>
-      <button type="submit" class="primary">Criar</button>
+      <label class="check"><input type="checkbox" name="excludes"> Não soma no total</label>
+      <button type="submit" class="primary">Adicionar</button>
     </form>
   </div>
 
   <h2>Pessoas</h2>
   {% if pessoas %}
-  <table>
-    <thead><tr><th>Nome</th><th class="col-estreita">Ações</th></tr></thead>
-    <tbody>
-    {% for t in pessoas %}
-    <tr>
-      <td>{{ t.name | title }}</td>
-      <td class="col-estreita">
-        <div class="acoes-grupo">
-          <a class="btn small" href="{{ base() }}/categorias/{{ t.id }}">Ver lançamentos</a>
-          <a class="btn small" href="{{ base() }}/categorias/{{ t.id }}/editar">Editar</a>
-          <form class="inline" method="post" action="{{ base() }}/categorias/{{ t.id }}/excluir" onsubmit="return confirm('Excluir esta pessoa? Ela será removida de todos os lançamentos.')">
-            <button type="submit" class="small danger">Excluir</button>
-          </form>
-        </div>
-      </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <div class="panel">
+    <table>
+      <thead><tr><th class="desc">Nome</th><th class="col-estreita">Ações</th></tr></thead>
+      <tbody>
+      {% for t in pessoas %}
+      <tr>
+        <td class="desc">{{ t.name | lower }}</td>
+        <td class="col-estreita">
+          <div class="acoes">
+            <a class="btn icon" href="{{ base() }}/categorias/{{ t.id }}" title="Ver lançamentos" aria-label="Ver lançamentos">{{ m.icone('ver') }}</a>
+            <a class="btn icon" href="{{ base() }}/categorias/{{ t.id }}/editar" title="Editar" aria-label="Editar">{{ m.icone('editar') }}</a>
+            <form class="inline" method="post" action="{{ base() }}/categorias/{{ t.id }}/excluir" onsubmit="return confirm('Excluir esta pessoa? Ela será removida de todos os lançamentos.')">
+              <button type="submit" class="icon danger" title="Excluir" aria-label="Excluir">{{ m.icone('excluir') }}</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
   <p class="muted">Nenhuma pessoa cadastrada. Elas aparecem aqui ao cadastrar uma compra de terceiros.</p>
   {% endif %}
 
   <h2>Recorrentes</h2>
   {% if recorrentes %}
-  <table>
-    <thead><tr><th>Nome</th><th class="col-estreita">Ações</th></tr></thead>
-    <tbody>
-    {% for t in recorrentes %}
-    <tr>
-      <td>{{ t.name }}</td>
-      <td class="col-estreita">
-        <div class="acoes-grupo">
-          <a class="btn small" href="{{ base() }}/categorias/{{ t.id }}">Ver lançamentos</a>
-        </div>
-      </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  <p class="aviso">Estas categorias são criadas pelas recorrências. Para renomear ou excluir, use a aba Recorrentes.</p>
+  <div class="panel">
+    <table>
+      <thead><tr><th class="desc">Nome</th><th class="col-estreita">Ações</th></tr></thead>
+      <tbody>
+      {% for t in recorrentes %}
+      <tr>
+        <td class="desc">{{ t.name | lower }}</td>
+        <td class="col-estreita">
+          <div class="acoes">
+            <a class="btn icon" href="{{ base() }}/categorias/{{ t.id }}" title="Ver lançamentos" aria-label="Ver lançamentos">{{ m.icone('ver') }}</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="aviso">Estas categorias são criadas pelas recorrências. Para renomear ou excluir, use a aba Recorrentes.</p>
+  </div>
   {% else %}
   <p class="muted">Nenhuma recorrência com categoria ainda.</p>
   {% endif %}
 
   <h2>Categorias cadastradas</h2>
   {% if categorias %}
-  <table>
-    <thead><tr><th>Nome</th><th class="col-estreita">Regra</th><th class="col-estreita">Ações</th></tr></thead>
-    <tbody>
-    {% for t in categorias %}
-<tr>
-  <td>{{ t.name }}</td>
-  <td class="col-estreita">{% if t.excludes_from_total %}<span class="pill">não soma</span>{% else %}<span class="pill ok">soma</span>{% endif %}</td>
-  <td class="col-estreita">
-  <div class="acoes-grupo">
-      <a class="btn small" href="{{ base() }}/categorias/{{ t.id }}">Ver lançamentos</a>
-      <a class="btn small" href="{{ base() }}/categorias/{{ t.id }}/editar">Editar</a>
-      <form class="inline" method="post" action="{{ base() }}/categorias/{{ t.id }}/excluir" onsubmit="return confirm('Excluir esta categoria? Ela será removida de todos os lançamentos.')">
-        <button type="submit" class="small danger">Excluir</button>
-      </form>
-    </div>
-  </td>
-</tr>
-{% endfor %}
-    </tbody>
-  </table>
+  <div class="panel">
+    <table>
+      <thead><tr><th class="desc">Nome</th><th class="col-estreita">Regra</th><th class="col-estreita">Ações</th></tr></thead>
+      <tbody>
+      {% for t in categorias %}
+      <tr>
+        <td class="desc">{{ t.name }}</td>
+        <td class="col-estreita">{% if t.excludes_from_total %}<span class="pill">não soma</span>{% else %}<span class="pill ok">soma</span>{% endif %}</td>
+        <td class="col-estreita">
+          <div class="acoes">
+            <a class="btn icon" href="{{ base() }}/categorias/{{ t.id }}" title="Ver lançamentos" aria-label="Ver lançamentos">{{ m.icone('ver') }}</a>
+            <a class="btn icon" href="{{ base() }}/categorias/{{ t.id }}/editar" title="Editar" aria-label="Editar">{{ m.icone('editar') }}</a>
+            <form class="inline" method="post" action="{{ base() }}/categorias/{{ t.id }}/excluir" onsubmit="return confirm('Excluir esta categoria? Ela será removida de todos os lançamentos.')">
+              <button type="submit" class="icon danger" title="Excluir" aria-label="Excluir">{{ m.icone('excluir') }}</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
   <p class="muted">Nenhuma categoria cadastrada ainda.</p>
   {% endif %}

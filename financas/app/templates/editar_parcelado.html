@@ -3,16 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Editar parcelamento</title>
+  <title>Editar parcelamento · Finanças</title>
   {% include "_style.html" %}
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
+  {{ m.voltar(base() ~ '/parcelados') }}
   <h1>Editar parcelamento</h1>
+
+  {% if erro %}{{ m.erro(erro) }}{% endif %}
+
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/parcelados/{{ plan.id }}/editar">
-      <label>Descrição<input name="description" value="{{ plan.description }}" required></label>
+    <form class="grid" style="--cols: 4" method="post" action="{{ base() }}/parcelados/{{ plan.id }}/editar">
+      <label class="span2">Descrição<input name="description" value="{{ plan.description }}" required></label>
       <label>Valor da parcela (R$)<input name="amount" value="{{ '%.2f'|format(plan.installment_cents / 100) | replace('.', ',') }}" required></label>
       <label>Vencimento
         <select name="due_day">
@@ -20,14 +25,13 @@
           {% for d in range(1, 32) %}<option value="{{ d }}" {{ 'selected' if d == plan.due_day }}>Dia {{ d }}</option>{% endfor %}
         </select>
       </label>
-      <label>Categorias (separadas por vírgula)<input name="categorias" value="{{ categorias }}" placeholder="mercado, lazer"></label>
+      <label class="span3">Categorias (separadas por vírgula)<input name="categorias" value="{{ categorias }}" placeholder="mercado, lazer"></label>
       <button type="submit" class="primary">Salvar</button>
     </form>
     <p class="aviso">{{ forma }}{% if cartao %} · {{ cartao }}{% endif %} · {{ plan.installments_total }} parcelas de {{ plan.installment_cents | brl }}.</p>
     <p class="aviso">Forma de pagamento, cartão e total de parcelas não mudam aqui. Para alterar, exclua e cadastre de novo.</p>
     <p class="aviso">As alterações valem para as parcelas pendentes. As já pagas não mudam.</p>
   </div>
-  <p><a href="{{ base() }}/parcelados">‹ Voltar</a></p>
 </div>
 </body>
 </html>

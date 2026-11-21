@@ -1,6 +1,7 @@
 """Início e lançamentos: criar, editar, pagar e excluir."""
 
 from datetime import date
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlmodel import Session, select
@@ -33,7 +34,7 @@ def _parse_third(value: str, amount_cents: int, kind: str) -> int | None:
         return None
     third = parse_brl(value)
     if third < 0 or third > amount_cents:
-        raise HTTPException(status_code=400, detail="Terceiros deve estar entre 0 e o valor do lançamento")
+        raise ValueError("Terceiros deve estar entre 0 e o valor do lançamento.")
     return third or None
 
 
@@ -44,10 +45,13 @@ def _third_text(tx: Transaction) -> str:
 
 
 def _validar_tags(session: Session, tags: str, tx_id: int | None = None) -> None:
-    try:
-        validar_categorias_livres(session, tags, tx_id=tx_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    validar_categorias_livres(session, tags, tx_id=tx_id)
+
+
+def _volta_com_erro(url: str, mensagem: str) -> RedirectResponse:
+    """Volta para a tela com a mensagem de erro. Nada é gravado."""
+    separador = "&" if "?" in url else "?"
+    return RedirectResponse(f"{url}{separador}erro={quote(mensagem)}", status_code=303)
 
 
 def _delete_tx(session: Session, tx: Transaction) -> None:
@@ -59,7 +63,12 @@ def _delete_tx(session: Session, tx: Transaction) -> None:
 
 
 @router.get("/")
-def home(request: Request, mes: str | None = None, session: Session = Depends(get_session)):
+def home(
+    request: Request,
+    mes: str | None = None,
+    erro: str | None = None,
+    session: Session = Depends(get_session),
+):
     generate_all(session)
     generate_installments(session)
     ref = mes or current_month()
@@ -90,6 +99,7 @@ def home(request: Request, mes: str | None = None, session: Session = Depends(ge
             "atrasados": overdue_items(session),
             "antes": antes,
             "grafico": receitas_despesas_mensal(session, ref, antes, depois),
+            "erro": erro,
         },
     )
 
@@ -104,15 +114,20 @@ def create_transaction(
     tags: str = Form(""),
     session: Session = Depends(get_session),
 ):
-    _validar_tags(session, tags)
-    amount_cents = parse_brl(amount)
+    try:
+        _validar_tags(session, tags)
+        amount_cents = parse_brl(amount)
+        terceiros = _parse_third(third_party, amount_cents, kind)
+    except ValueError as e:
+        session.rollback()
+        return _volta_com_erro(f"/?mes={due_date:%Y-%m}", str(e))
     tx = Transaction(
         description=description,
         amount_cents=amount_cents,
         due_date=due_date,
         kind=kind,
         status="pendente",
-        third_party_cents=_parse_third(third_party, amount_cents, kind),
+        third_party_cents=terceiros,
     )
     session.add(tx)
     session.flush()
@@ -122,14 +137,24 @@ def create_transaction(
 
 
 @router.get("/lancamentos/{tx_id}/editar")
-def edit_transaction_page(tx_id: int, request: Request, session: Session = Depends(get_session)):
+def edit_transaction_page(
+    tx_id: int,
+    request: Request,
+    erro: str | None = None,
+    session: Session = Depends(get_session),
+):
     tx = session.get(Transaction, tx_id)
     if tx is None:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
     return templates.TemplateResponse(
         request,
         "editar_lancamento.html",
-        {"tx": tx, "tags_text": tag_text(session, tx.id), "third_text": _third_text(tx)},
+        {
+            "tx": tx,
+            "tags_text": tag_text(session, tx.id),
+            "third_text": _third_text(tx),
+            "erro": erro,
+        },
     )
 
 
@@ -147,10 +172,15 @@ def edit_transaction(
     tx = session.get(Transaction, tx_id)
     if tx is None:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
-    _validar_tags(session, tags, tx_id)
-    amount_cents = parse_brl(amount)
+    try:
+        _validar_tags(session, tags, tx_id)
+        amount_cents = parse_brl(amount)
+        terceiros = _parse_third(third_party, amount_cents, kind)
+    except ValueError as e:
+        session.rollback()
+        return _volta_com_erro(f"/lancamentos/{tx_id}/editar", str(e))
     update_transaction(session, tx, description, amount_cents, due_date, kind)
-    tx.third_party_cents = _parse_third(third_party, amount_cents, kind)
+    tx.third_party_cents = terceiros
     session.add(tx)
     set_tags(session, tx, parse_tags(tags))
     session.commit()

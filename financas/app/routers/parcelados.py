@@ -1,6 +1,7 @@
 """Parcelados: cartão, boleto, carnê e financiamento."""
 
 from datetime import date
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlmodel import Session, select
@@ -26,10 +27,15 @@ from app.web import RedirectResponse, templates
 router = APIRouter()
 
 
+def _erro(mensagem: str, destino: str = "/parcelados") -> RedirectResponse:
+    return RedirectResponse(f"{destino}?erro={quote(mensagem)}", status_code=303)
+
+
 @router.get("/parcelados")
 def parcelados_page(
     request: Request,
     erro: str | None = None,
+    ok: str | None = None,
     criadas: int | None = None,
     atualizadas: int | None = None,
     session: Session = Depends(get_session),
@@ -54,6 +60,7 @@ def parcelados_page(
             "mes_atual_num": hoje.month,
             "ano_atual": hoje.year,
             "erro": erro,
+            "ok": ok,
             "criadas": criadas,
             "atualizadas": atualizadas,
             "dia_padrao": int(get_setting(session, "dia_padrao")),
@@ -92,21 +99,21 @@ def create_installment(
         return RedirectResponse("/parcelados?erro=mes", status_code=303)
     try:
         validar_categorias_livres(session, categorias)
-    except ValueError:
-        return RedirectResponse("/parcelados?erro=categoria", status_code=303)
-
-    create_plan(
-        session,
-        description,
-        payment_method,
-        card_name,
-        parse_brl(amount),
-        total,
-        current_n,
-        current_ref,
-        due_day,
-        categorias,
-    )
+        create_plan(
+            session,
+            description,
+            payment_method,
+            card_name,
+            parse_brl(amount),
+            total,
+            current_n,
+            current_ref,
+            due_day,
+            categorias,
+        )
+    except ValueError as e:
+        session.rollback()
+        return _erro(str(e))
     session.commit()
     generate_installments(session)
     return RedirectResponse("/parcelados", status_code=303)
@@ -139,7 +146,12 @@ def delete_installment(plan_id: int, session: Session = Depends(get_session)):
 
 
 @router.get("/parcelados/{plan_id}/editar")
-def editar_parcelado_page(plan_id: int, request: Request, session: Session = Depends(get_session)):
+def editar_parcelado_page(
+    plan_id: int,
+    request: Request,
+    erro: str | None = None,
+    session: Session = Depends(get_session),
+):
     plan = session.get(InstallmentPlan, plan_id)
     if plan is None:
         raise HTTPException(status_code=404, detail="Parcelamento não encontrado")
@@ -155,6 +167,7 @@ def editar_parcelado_page(plan_id: int, request: Request, session: Session = Dep
             "forma": FORMAS.get(plan.payment_method, plan.payment_method),
             "cartao": cartao,
             "categorias": plan.tags_text,
+            "erro": erro,
         },
     )
 
@@ -171,12 +184,14 @@ def editar_parcelado(
     plan = session.get(InstallmentPlan, plan_id)
     if plan is None:
         raise HTTPException(status_code=404, detail="Parcelamento não encontrado")
+    destino = f"/parcelados/{plan_id}/editar"
     if not 0 <= due_day <= 31:
-        raise HTTPException(status_code=400, detail="Dia do vencimento inválido")
+        return _erro("Dia do vencimento inválido.", destino)
     try:
         validar_categorias_livres(session, categorias)
+        update_plan(session, plan, description, parse_brl(amount), due_day, categorias)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    update_plan(session, plan, description, parse_brl(amount), due_day, categorias)
+        session.rollback()
+        return _erro(str(e), destino)
     session.commit()
-    return RedirectResponse("/parcelados", status_code=303)
+    return RedirectResponse("/parcelados?ok=editado", status_code=303)

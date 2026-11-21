@@ -3,25 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Editar categoria</title>
+  <title>Editar categoria · Finanças</title>
   {% include "_style.html" %}
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
-  <p><a href="{{ base() }}/categorias">‹ Categorias</a></p>
-  <h1>Editar {{ tag.name | title }}</h1>
+  {{ m.voltar(base() ~ '/categorias') }}
+  <h1>Editar categoria</h1>
+
+  {% if erro %}{{ m.erro(erro) }}{% endif %}
 
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/categorias/{{ tag.id }}/atualizar">
-      <label>Nome<input name="name" value="{{ tag.name }}" required></label>
+    <form class="grid" style="--cols: 5" method="post" action="{{ base() }}/categorias/{{ tag.id }}/atualizar">
+      <label class="span2">Nome<input name="name" value="{{ tag.name }}" required></label>
       <label>Tipo
         <select name="tipo">
           <option value="categoria" {% if tag.kind != 'pessoa' %}selected{% endif %}>Categoria</option>
           <option value="pessoa" {% if tag.kind == 'pessoa' %}selected{% endif %}>Pessoa</option>
         </select>
       </label>
-      <label class="check" style="align-self: end; height: 2.4rem; display: flex; align-items: center;"><input type="checkbox" name="excludes" {% if tag.excludes_from_total %}checked{% endif %}> Não soma no total</label>
+      <label class="check"><input type="checkbox" name="excludes" {% if tag.excludes_from_total %}checked{% endif %}> Não soma no total</label>
       <button type="submit" class="primary">Salvar</button>
     </form>
   </div>

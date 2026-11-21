@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi.responses import RedirectResponse as _RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.services.util import fmt_brl, mes_curto
+from app.services.util import add_months, current_month, fmt_brl, mes_curto
 
 _prefixo: ContextVar[str] = ContextVar("prefixo", default="")
 
@@ -24,3 +24,5 @@ templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.filters["brl"] = fmt_brl
 templates.env.filters["mes"] = mes_curto
 templates.env.globals["base"] = lambda: _prefixo.get()
+templates.env.globals["mes_atual"] = current_month
+templates.env.globals["add_months"] = add_months

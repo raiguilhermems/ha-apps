@@ -3,35 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Finanças — {{ ref | mes }}</title>
+  <title>Início · Finanças</title>
   {% include "_style.html" %}
-  <style>
-    tr.linha-receita td:first-child { box-shadow: inset 4px 0 0 #34d399; }
-    tr.linha-despesa td:first-child { box-shadow: inset 4px 0 0 #f87171; }
-    tr.grupo td { background: rgba(255,255,255,.04); font-weight: 600; }
-    tr.linha-receita td:nth-child(2), tr.linha-despesa td:nth-child(2) { white-space: nowrap; }
-  </style>
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
-  <nav class="monthnav">
-    <a href="{{ base() }}/?mes={{ prev }}" class="arrow" aria-label="Mês anterior">‹</a>
-    <strong>{{ ref | mes }}</strong>
-    <a href="{{ base() }}/?mes={{ next }}" class="arrow" aria-label="Próximo mês">›</a>
-    {% if ref != today.strftime('%Y-%m') %}<a href="{{ base() }}/" class="hoje">Hoje</a>{% endif %}
-  </nav>
+  <h1>Início</h1>
+  {{ m.mesnav(base() ~ '/', ref) }}
+
+  {% if erro %}{{ m.erro(erro) }}{% endif %}
 
   <section class="cards">
     <div class="card"><small>Receitas</small><div class="val">{{ s.receitas_total | brl }}</div></div>
     <div class="card"><small>Despesas</small><div class="val">{{ s.despesas_total | brl }}</div></div>
-    <div class="card"><small>Saldo</small><div class="val saldo-{{ 'pos' if s.saldo >= 0 else 'neg' }}">{{ s.saldo | brl }}</div></div>
+    <div class="card"><small>Saldo</small><div class="val {{ 'ok' if s.saldo >= 0 else 'bad' }}">{{ s.saldo | brl }}</div></div>
     <div class="card"><small>Já pago</small><div class="val ok">{{ s.pago | brl }}</div></div>
     <div class="card"><small>A pagar</small><div class="val">{{ s.a_pagar | brl }}</div></div>
   </section>
 
   {% if atrasados %}
-  <div class="panel" style="border-color: var(--bad);">
+  <div class="banner erro">
     <strong>Atrasados (todos os meses): {{ atrasados | length }} itens · {{ atrasados | sum(attribute='valor') | brl }}</strong>
     <ul>
       {% for a in atrasados %}
@@ -43,25 +36,13 @@
 
   <h2>Receitas × despesas por mês</h2>
   <div class="panel">
-    <div style="position:relative;height:280px"><canvas id="chartMensal"></canvas></div>
-    <p class="muted" style="margin:.6rem 0 0">Barras mais claras são meses ainda não fechados. O contorno marca o mês atual.</p>
+    <div class="chart"><canvas id="chartMensal"></canvas></div>
+    <p class="aviso">Barras mais claras são meses ainda não fechados. O contorno marca o mês atual.</p>
   </div>
 
   <h2>Novo lançamento</h2>
   <div class="panel">
-    <style>
-      form.novo-lancamento { grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: end; }
-      form.novo-lancamento .span2 { grid-column: span 2; }
-      form.novo-lancamento .span5 { grid-column: span 5; }
-      form.novo-lancamento input, form.novo-lancamento select { width: 100%; }
-      form.novo-lancamento button.primary { justify-self: end; height: 2.4rem; }
-      @media (max-width: 640px) {
-        form.novo-lancamento { grid-template-columns: 1fr !important; }
-        form.novo-lancamento .span2, form.novo-lancamento .span5 { grid-column: auto; }
-        form.novo-lancamento button.primary { justify-self: stretch; width: 100%; }
-      }
-    </style>
-    <form class="grid novo-lancamento" method="post" action="{{ base() }}/lancamentos">
+    <form class="grid" style="--cols: 6" method="post" action="{{ base() }}/lancamentos">
       <label class="span2">Descrição<input name="description" required></label>
       <label>Valor (R$)<input name="amount" placeholder="1.234,56" required></label>
       <label>Vencimento<input type="date" name="due_date" value="{{ today }}" required></label>
@@ -72,7 +53,7 @@
         </select>
       </label>
       <label>Terceiros (R$, só despesa)<input name="third_party" placeholder="0,00"></label>
-      <label class="span5">Categorias (separadas por vírgula)<input name="tags" placeholder="mercado, terceiro"></label>
+      <label class="span5">Categorias (separadas por vírgula)<input name="tags" placeholder="mercado, lazer"></label>
       <button type="submit" class="primary">Adicionar</button>
     </form>
   </div>
@@ -80,7 +61,7 @@
   <h2>Lançamentos do mês</h2>
   <div class="panel">
     <table>
-      <thead><tr><th>Venc.</th><th>Descrição</th><th>Categorias</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Vencimento</th><th class="desc">Descrição</th><th>Categorias</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
       <tbody>
       {% for t in txs %}
       {% if loop.changed(t.kind) and t.kind in ['receita', 'despesa'] %}
@@ -92,38 +73,37 @@
       <tr{% if t.kind in ['receita', 'despesa'] %} class="linha-{{ t.kind }}"{% endif %}>
         <td>{{ t.due_date.strftime('%d/%m') }}</td>
         <td class="desc">
- 	  {{ t.description }}
- 	  {% if t.recurring_rule_id %}<span class="muted" title="Recorrente">↻</span>{% endif %}
-  	  {% if t.third_party_cents %}<span class="pill">terceiros {{ t.third_party_cents | brl }}</span>{% endif %}
-	</td>
-        <td>
-          {% for tg in tag_map.get(t.id, []) %}{% if tg.id is defined %}<a class="pill" href="{{ base() }}/categorias/{{ tg.id }}">{{ tg.name }}</a>{% else %}<span class="pill">{{ tg }}</span>{% endif %} {% endfor %}
+          {{ t.description }}
+          {% if t.recurring_rule_id %}<span class="muted" title="Recorrente">↻</span>{% endif %}
+          {% if t.third_party_cents %}<span class="pill">terceiros {{ t.third_party_cents | brl }}</span>{% endif %}
         </td>
-        <td class="valor">{{ t.amount_cents | brl }}</td>
-        <td class="status-col">
-  	  {% if t.status == 'pago' %}
-   	   <span class="pill ok">{{ 'Recebido' if t.kind == 'receita' else 'Pago' }}</span>
- 	   {% elif atrasada %}
-  	    <span class="pill bad">Atrasado</span>
-  	  {% else %}
- 	     <span class="pill">{{ 'A receber' if t.kind == 'receita' else 'Pendente' }}</span>
-  	  {% endif %}
-	</td>
         <td>
-  	<div class="acoes-grupo">
-    	<form class="inline" method="post" action="{{ base() }}/transacoes/{{ t.id }}/pagar">
-      	<input type="hidden" name="mes" value="{{ ref }}">
-      	<button type="submit" class="small">
-      	  {% if t.status == 'pago' %}Desfazer{% elif t.kind == 'receita' %}Marcar recebido{% else %}Marcar pago{% endif %}
-      	</button>
-   	 </form>
-   	 <a class="btn small" href="{{ base() }}/lancamentos/{{ t.id }}/editar">Editar</a>
-    	<form class="inline" method="post" action="{{ base() }}/transacoes/{{ t.id }}/excluir" onsubmit="return confirm('Excluir este lançamento?')">
-     	      <input type="hidden" name="mes" value="{{ ref }}">
-     	              <button type="submit" class="danger small">Excluir</button>
-    	    </form>
-  	  </div>
-	</td>
+          {% for tg in tag_map.get(t.id, []) %}{{ m.cat_pill(tg.id, tg.name, tg.kind) }} {% endfor %}
+        </td>
+        <td>{{ t.amount_cents | brl }}</td>
+        <td class="status">
+          {% if t.status == 'pago' %}
+            <span class="pill ok">{{ 'Recebido' if t.kind == 'receita' else 'Pago' }}</span>
+          {% elif atrasada %}
+            <span class="pill bad">Atrasado</span>
+          {% else %}
+            <span class="pill">{{ 'A receber' if t.kind == 'receita' else 'Pendente' }}</span>
+          {% endif %}
+        </td>
+        <td class="col-estreita">
+          <div class="acoes">
+            <form class="inline" method="post" action="{{ base() }}/transacoes/{{ t.id }}/pagar">
+              <input type="hidden" name="mes" value="{{ ref }}">
+              {% set rot = 'Desfazer' if t.status == 'pago' else ('Marcar recebido' if t.kind == 'receita' else 'Marcar pago') %}
+              <button type="submit" class="icon" title="{{ rot }}" aria-label="{{ rot }}">{{ m.icone('desfazer' if t.status == 'pago' else 'check') }}</button>
+            </form>
+            <a class="btn icon" href="{{ base() }}/lancamentos/{{ t.id }}/editar" title="Editar" aria-label="Editar">{{ m.icone('editar') }}</a>
+            <form class="inline" method="post" action="{{ base() }}/transacoes/{{ t.id }}/excluir" onsubmit="return confirm('Excluir este lançamento?')">
+              <input type="hidden" name="mes" value="{{ ref }}">
+              <button type="submit" class="icon danger" title="Excluir" aria-label="Excluir">{{ m.icone('excluir') }}</button>
+            </form>
+          </div>
+        </td>
       </tr>
       {% else %}
       <tr><td colspan="6" class="muted">Nenhum lançamento neste mês.</td></tr>
@@ -131,40 +111,11 @@
       </tbody>
     </table>
   </div>
-
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+{% include "_chart.html" %}
 <script>
-Chart.defaults.color = '#9aa3b2';
-Chart.defaults.borderColor = '#2a2f3a';
-const reais = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-const G = {{ grafico | tojson }};
-new Chart(document.getElementById('chartMensal'), {
-  type: 'bar',
-  data: {
-    labels: G.labels,
-    datasets: [
-      {
-        label: 'Receitas', data: G.receitas,
-        backgroundColor: G.futuro.map(f => f ? '#34d39966' : '#34d399'),
-        borderColor: G.atual.map(a => a ? '#e6e9ef' : 'transparent'),
-        borderWidth: G.atual.map(a => a ? 2 : 0)
-      },
-      {
-        label: 'Despesas', data: G.despesas,
-        backgroundColor: G.futuro.map(f => f ? '#f8717166' : '#f87171'),
-        borderColor: G.atual.map(a => a ? '#e6e9ef' : 'transparent'),
-        borderWidth: G.atual.map(a => a ? 2 : 0)
-      }
-    ]
-  },
-  options: {
-    maintainAspectRatio: false,
-    scales: { y: { beginAtZero: true, ticks: { callback: v => reais(v) } } },
-    plugins: { tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + reais(c.parsed.y) } } }
-  }
-});
+graficoReceitasDespesas(document.getElementById('chartMensal'), {{ grafico | tojson }});
 </script>
 </body>
 </html>

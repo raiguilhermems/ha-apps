@@ -3,16 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Editar recorrência</title>
+  <title>Editar recorrência · Finanças</title>
   {% include "_style.html" %}
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
+  {{ m.voltar(base() ~ '/recorrentes') }}
   <h1>Editar recorrência</h1>
+
+  {% if erro %}{{ m.erro(erro) }}{% endif %}
+
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/recorrentes/{{ rule.id }}/editar">
-      <label>Descrição<input name="description" value="{{ rule.description }}" required></label>
+    <form class="grid" style="--cols: 5" method="post" action="{{ base() }}/recorrentes/{{ rule.id }}/editar">
+      <label class="span2">Descrição<input name="description" value="{{ rule.description }}" required></label>
       <label>Valor (R$)<input name="amount" value="{{ '%.2f'|format(rule.expected_cents / 100) | replace('.', ',') }}" required></label>
       <label data-vencimento>Vencimento
         <select name="day">
@@ -28,19 +33,17 @@
       </label>
       <label data-cartao>Cartão (opcional)
         <select name="card_name" onchange="toggleCartao(this)">
-  <option value="">— escolher —</option>
-  {% for c in cards %}<option value="{{ c.name }}" data-dia="{{ c.dia_pagamento or '' }}"{% if c.name == card_name %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
-</select>
-
+          <option value="">— nenhum —</option>
+          {% for c in cards %}<option value="{{ c.name }}" data-dia="{{ c.dia_pagamento or '' }}"{% if c.name == card_name %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </select>
       </label>
-      <label>Categorias (separadas por vírgula)<input name="categorias" value="{{ categorias }}" placeholder="mercado, lazer"></label>
+      <label class="span2">Categorias (separadas por vírgula)<input name="categorias" value="{{ categorias }}" placeholder="mercado, lazer"></label>
       <label class="check"><input type="checkbox" name="variable" {{ 'checked' if rule.variable }}> Valor variável (ex.: luz)</label>
       <button type="submit" class="primary">Salvar</button>
     </form>
     <p class="aviso" data-venc-aviso></p>
     <p class="aviso">Atualiza os lançamentos pendentes a partir deste mês que ainda não estão em fatura. Os já pagos não mudam. Valores que você ajustou à mão no Início são mantidos.</p>
   </div>
-  <p><a href="{{ base() }}/recorrentes">‹ Voltar</a></p>
 </div>
 <script>
 function toggleCartao(sel) {

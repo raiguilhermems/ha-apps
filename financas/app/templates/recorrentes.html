@@ -3,33 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Recorrentes</title>
+  <title>Recorrentes · Finanças</title>
   {% include "_style.html" %}
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
   <h1>Recorrentes</h1>
-  {% if erro %}
-  <div class="panel" style="border-color: var(--bad);"><strong>{{ erro }}</strong> Nada foi gravado.</div>
-  {% endif %}
+
+  {% if erro %}{{ m.erro(erro) }}{% endif %}
+  {% if ok == 'criada' %}{{ m.sucesso('Recorrência criada. Os lançamentos aparecem no Início nos próximos 12 meses.') }}{% endif %}
+  {% if ok == 'salva' %}{{ m.sucesso('Recorrência atualizada.') }}{% endif %}
+
   <p class="aviso">As regras geram lançamentos automaticamente nos próximos 12 meses. Dia 31 em um mês de 30 dias vira o último dia do mês. Valor variável: o valor de cada mês é uma estimativa. Ajuste o valor real no Início, em Editar, quando souber.</p>
 
   <h2>Nova recorrência</h2>
   <div class="panel">
-    <style>
-      form.novo-recorrente { grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: end; }
-      form.novo-recorrente .span2 { grid-column: span 2; }
-      form.novo-recorrente .span4 { grid-column: span 4; }
-      form.novo-recorrente input, form.novo-recorrente select { width: 100%; }
-      form.novo-recorrente button.primary { justify-self: end; height: 2.4rem; }
-      @media (max-width: 640px) {
-        form.novo-recorrente { grid-template-columns: 1fr !important; }
-        form.novo-recorrente .span2, form.novo-recorrente .span4 { grid-column: auto; }
-        form.novo-recorrente button.primary { justify-self: stretch; width: 100%; }
-      }
-    </style>
-    <form class="grid novo-recorrente" method="post" action="{{ base() }}/recorrentes">
+    <form class="grid" style="--cols: 6" method="post" action="{{ base() }}/recorrentes">
       <label class="span2">Descrição<input name="description" required></label>
       <label>Valor (R$)<input name="amount" placeholder="1.234,56" required></label>
       <label data-vencimento>Vencimento
@@ -46,10 +37,9 @@
       </label>
       <label data-cartao>Cartão (opcional)
         <select name="card_name" onchange="toggleCartao(this)">
-  <option value="">— escolher —</option>
-  {% for c in cards %}<option value="{{ c.name }}" data-dia="{{ c.dia_pagamento or '' }}"{% if c.name == card_name %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
-</select>
-
+          <option value="">— nenhum —</option>
+          {% for c in cards %}<option value="{{ c.name }}" data-dia="{{ c.dia_pagamento or '' }}"{% if c.name == card_name %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </select>
       </label>
       <label class="span4">Categorias (separadas por vírgula)<input name="categorias" placeholder="mercado, lazer"></label>
       <label class="check"><input type="checkbox" name="variable"> Valor variável (ex.: luz)</label>
@@ -59,72 +49,73 @@
   </div>
 
   <h2>Verificação do mês</h2>
-  <div class="monthbar">
-    <a href="{{ base() }}/recorrentes?mes={{ prev }}">‹ {{ prev | mes }}</a>
-    <strong>{{ ref | mes }}</strong>
-    <a href="{{ base() }}/recorrentes?mes={{ next }}">{{ next | mes }} ›</a>
-  </div>
+  {{ m.mesnav(base() ~ '/recorrentes', ref) }}
   {% if verif %}
-  <table>
-    <thead><tr><th>Descrição</th><th>Tipo</th><th>Esperado</th><th>Lançado</th><th>Status</th></tr></thead>
-    <tbody>
-    {% for v in verif %}
-    <tr class="linha-{{ v.tipo }}">
-      <td class="desc">{{ v.descricao }}</td>
-      <td class="muted">{{ 'Despesa' if v.tipo == 'despesa' else 'Receita' }}</td>
-      <td><span class="celula-valor">{{ v.esperado | brl }}{% if v.variavel %}<span class="pill">variável</span>{% endif %}</span></td>
-      <td>
-        {% if v.real is none %}<span class="muted">—</span>{% else %}{{ v.real | brl }}{% endif %}
-        {% if v.divergente %}<span class="pill bad">valor diferente</span>{% endif %}
-      </td>
-      <td class="status-col">
-        {% if v.status == 'pago' %}<span class="pill ok">Pago</span>
-        {% elif v.status == 'recebido' %}<span class="pill ok">Recebido</span>
-        {% elif v.status == 'atrasado' %}<span class="pill bad">Atrasado</span>
-        {% elif v.status == 'a receber' %}<span class="pill">A receber</span>
-        {% elif v.status == 'pendente' %}<span class="pill">Pendente</span>
-        {% else %}<span class="pill">Não lançado</span>{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <div class="panel">
+    <table>
+      <thead><tr><th class="desc">Descrição</th><th>Tipo</th><th>Esperado</th><th>Lançado</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for v in verif %}
+      <tr class="linha-{{ v.tipo }}">
+        <td class="desc">{{ v.descricao }}</td>
+        <td class="muted">{{ 'Despesa' if v.tipo == 'despesa' else 'Receita' }}</td>
+        <td><span class="celula-valor">{{ v.esperado | brl }}{% if v.variavel %}<span class="pill">variável</span>{% endif %}</span></td>
+        <td>
+          {% if v.real is none %}<span class="muted">—</span>{% else %}{{ v.real | brl }}{% endif %}
+          {% if v.divergente %}<span class="pill bad">valor diferente</span>{% endif %}
+        </td>
+        <td class="status">
+          {% if v.status == 'pago' %}<span class="pill ok">Pago</span>
+          {% elif v.status == 'recebido' %}<span class="pill ok">Recebido</span>
+          {% elif v.status == 'atrasado' %}<span class="pill bad">Atrasado</span>
+          {% elif v.status == 'a receber' %}<span class="pill">A receber</span>
+          {% elif v.status == 'pendente' %}<span class="pill">Pendente</span>
+          {% else %}<span class="pill">Não lançado</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
   <p class="muted">Nenhuma recorrência ativa.</p>
   {% endif %}
 
   <h2>Regras</h2>
   {% if rows %}
-  <table>
-    <thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Dia</th><th>Cartão</th><th>Situação</th><th>Ações</th></tr></thead>
-    <tbody>
-        {% for r in rows %}
-    <tr class="linha-{{ r.rule.kind }}">
-      <td class="desc">{{ r.rule.description }}
-        {% if not r.rule.tag_id %}<span class="pill bad" title="Há outra categoria com este nome. Renomeie a recorrência para criar a categoria.">sem categoria</span>{% endif %}
-        {% for c in r.cats %}{% if c.id %}<a class="pill" href="{{ base() }}/categorias/{{ c.id }}">{{ c.nome }}</a>{% else %}<span class="pill">{{ c.nome }}</span>{% endif %}{% endfor %}</td>
-      <td class="muted">{{ 'Despesa' if r.rule.kind == 'despesa' else 'Receita' }}</td>
-      <td>
-        <span class="celula-valor">{{ r.rule.expected_cents | brl }}{% if r.rule.variable %}<span class="pill">variável</span>{% endif %}</span>
-      </td>
-      <td>{{ '1º dia útil' if r.rule.day_of_month == 0 else r.rule.day_of_month }}</td>
-      <td>{% if r.cartao != '—' %}<span class="pill">{{ r.cartao }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
-      <td>{% if r.rule.active %}<span class="pill ok">Ativa</span>{% else %}<span class="pill">Pausada</span>{% endif %}</td>
-      <td>
-        <div class="acoes-grupo">
-          <a class="btn small" href="{{ base() }}/recorrentes/{{ r.rule.id }}/editar">Editar</a>
-          <form class="inline" method="post" action="{{ base() }}/recorrentes/{{ r.rule.id }}/ativar">
-            <button type="submit" class="small">{{ 'Pausar' if r.rule.active else 'Ativar' }}</button>
-          </form>
-          <form class="inline" method="post" action="{{ base() }}/recorrentes/{{ r.rule.id }}/excluir" onsubmit="return confirm('Excluir esta recorrência? Os lançamentos futuros pendentes serão apagados.')">
-            <button type="submit" class="small danger">Excluir</button>
-          </form>
-        </div>
-      </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <div class="panel">
+    <table>
+      <thead><tr><th class="desc">Descrição</th><th>Tipo</th><th>Valor</th><th>Dia</th><th>Cartão</th><th>Situação</th><th>Ações</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+      <tr class="linha-{{ r.rule.kind }}">
+        <td class="desc">
+          {{ r.rule.description }}
+          {% if not r.rule.tag_id %}<span class="pill bad" title="Há outra categoria com este nome. Renomeie a recorrência para criar a categoria.">sem categoria</span>{% endif %}
+          {% for c in r.cats %}{{ m.cat_pill(c.id, c.nome, c.kind) }}{% endfor %}
+        </td>
+        <td class="muted">{{ 'Despesa' if r.rule.kind == 'despesa' else 'Receita' }}</td>
+        <td><span class="celula-valor">{{ r.rule.expected_cents | brl }}{% if r.rule.variable %}<span class="pill">variável</span>{% endif %}</span></td>
+        <td>{{ '1º dia útil' if r.rule.day_of_month == 0 else r.rule.day_of_month }}</td>
+        <td>{% if r.cartao != '—' %}<span class="pill">{{ r.cartao }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td>{% if r.rule.active %}<span class="pill ok">Ativa</span>{% else %}<span class="pill">Pausada</span>{% endif %}</td>
+        <td class="col-estreita">
+          <div class="acoes">
+            <form class="inline" method="post" action="{{ base() }}/recorrentes/{{ r.rule.id }}/ativar">
+              {% set rot = 'Pausar' if r.rule.active else 'Ativar' %}
+              <button type="submit" class="icon" title="{{ rot }}" aria-label="{{ rot }}">{{ m.icone('pausar' if r.rule.active else 'ativar') }}</button>
+            </form>
+            <a class="btn icon" href="{{ base() }}/recorrentes/{{ r.rule.id }}/editar" title="Editar" aria-label="Editar">{{ m.icone('editar') }}</a>
+            <form class="inline" method="post" action="{{ base() }}/recorrentes/{{ r.rule.id }}/excluir" onsubmit="return confirm('Excluir esta recorrência? Os lançamentos futuros pendentes serão apagados.')">
+              <button type="submit" class="icon danger" title="Excluir" aria-label="Excluir">{{ m.icone('excluir') }}</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
   <p class="muted">Nenhuma recorrência cadastrada.</p>
   {% endif %}

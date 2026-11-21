@@ -3,30 +3,27 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Parcelados</title>
+  <title>Parcelados · Finanças</title>
   {% include "_style.html" %}
-  <style>
-    form.novo-parcelamento { grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: end; }
-    form.novo-parcelamento .span2 { grid-column: span 2; }
-    form.novo-parcelamento .span3 { grid-column: span 3; }
-    form.novo-parcelamento input, form.novo-parcelamento select { width: 100%; }
-    form.novo-parcelamento button.cadastrar { height: 3rem; font-size: 1rem; padding: 0 1.6rem; justify-self: end; }
-    @media (max-width: 640px) {
-      form.novo-parcelamento { grid-template-columns: 1fr !important; }
-      form.novo-parcelamento .span2 { grid-column: auto; }
-      form.novo-parcelamento button.cadastrar { justify-self: stretch; width: 100%; }
-    }
-  </style>
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 {% macro plano(plan, receber) %}
-    <h3>{{ plan.descricao }}</h3>
-    <div class="panel" style="border-left:4px solid {{ '#34d399' if receber else 'var(--bad)' }}">
+    <div class="panel {{ 'plano-receber' if receber else 'plano-pagar' }}">
+      <div class="plano-titulo">
+        <h3>{{ plan.descricao }}</h3>
+        <div class="acoes esq">
+          <a class="btn icon" href="{{ base() }}/parcelados/{{ plan.id }}/editar" title="Editar" aria-label="Editar">{{ m.icone('editar') }}</a>
+          <form class="inline" method="post" action="{{ base() }}/parcelados/{{ plan.id }}/excluir" onsubmit="return confirm('Excluir este parcelamento? As parcelas pendentes serão apagadas.')">
+            <button type="submit" class="icon danger" title="Excluir" aria-label="Excluir">{{ m.icone('excluir') }}</button>
+          </form>
+        </div>
+      </div>
       <p>
         {% if receber and plan.pessoa_tag_id %}<a class="pill" href="{{ base() }}/categorias/{{ plan.pessoa_tag_id }}">{{ plan.forma_label }}</a>{% else %}<span class="pill">{{ plan.forma_label }}</span>{% endif %}
         <span class="pill">{{ plan.parcela | brl }} por mês</span>
-        {% for c in plan.categorias %}{% if c.id %}<a class="pill" href="{{ base() }}/categorias/{{ c.id }}">{{ c.nome }}</a>{% else %}<span class="pill">{{ c.nome }}</span>{% endif %}{% endfor %}
+        {% for c in plan.categorias %}{{ m.cat_pill(c.id, c.nome, c.kind) }}{% endfor %}
         {% if plan.concluido %}<span class="pill ok">Concluído</span>{% endif %}
       </p>
       <p class="aviso">{{ plan.pagas }} de {{ plan.total }} {{ 'recebidas' if receber else 'pagas' }} · restam {{ plan.restantes }} · saldo {{ plan.saldo | brl }}</p>
@@ -39,62 +36,61 @@
           <td>{{ r.mes | mes }}</td>
           <td>{{ r.vencimento.strftime('%d/%m/%Y') }}</td>
           <td>{{ r.valor | brl }}</td>
-          <td>
-            {% if r.status == 'pago' %}<span class="pill ok">{{ 'Recebida' if receber else 'Paga' }}</span>
-            {% elif r.status == 'atrasada' %}<span class="pill bad">Atrasada</span>
+          <td class="status">
+            {% if r.status == 'pago' %}<span class="pill ok">{{ 'Recebido' if receber else 'Pago' }}</span>
+            {% elif r.status == 'atrasada' %}<span class="pill bad">Atrasado</span>
             {% elif r.status == 'passada' %}<span class="pill">Anterior</span>
-            {% else %}<span class="pill">Pendente</span>{% endif %}
+            {% else %}<span class="pill">{{ 'A receber' if receber else 'Pendente' }}</span>{% endif %}
           </td>
-          <td>
+          <td class="col-estreita">
             {% if r.tx_id %}
-            <form class="inline" method="post" action="{{ base() }}/parcelados/tx/{{ r.tx_id }}/pagar">
-              <button type="submit" class="small">{{ 'Desmarcar' if r.status == 'pago' else ('Marcar recebida' if receber else 'Marcar paga') }}</button>
-            </form>
+            <div class="acoes">
+              <form class="inline" method="post" action="{{ base() }}/parcelados/tx/{{ r.tx_id }}/pagar">
+                {% set rot = 'Desfazer' if r.status == 'pago' else ('Marcar recebido' if receber else 'Marcar pago') %}
+                <button type="submit" class="icon" title="{{ rot }}" aria-label="{{ rot }}">{{ m.icone('desfazer' if r.status == 'pago' else 'check') }}</button>
+              </form>
+            </div>
             {% endif %}
           </td>
         </tr>
         {% endfor %}
         </tbody>
       </table>
-      <a class="btn small" href="{{ base() }}/parcelados/{{ plan.id }}/editar">Editar</a>
-      <form class="inline" method="post" action="{{ base() }}/parcelados/{{ plan.id }}/excluir" onsubmit="return confirm('Excluir este parcelamento? As parcelas pendentes serão apagadas.')">
-        <button type="submit" class="danger">Excluir parcelamento</button>
-      </form>
     </div>
 {% endmacro %}
 
 <div class="wrap">
   <h1>Parcelados</h1>
-  {% if erro %}
-  <div class="panel" style="border-color: var(--bad);">
-    {{ {'cartao': 'Escolha um cartão cadastrado (aba Cartões) para parcelas de cartão. Nada foi cadastrado.',
-        'forma': 'Escolha uma forma de pagamento válida. Nada foi cadastrado.',
-        'parcela': 'A parcela atual precisa estar entre 1 e o total de parcelas. Nada foi cadastrado.',
-        'dia': 'Dia do vencimento inválido. Nada foi cadastrado.',
-        'mes': 'Mês da parcela atual inválido. Nada foi cadastrado.'}.get(erro, 'Não foi possível cadastrar.') }}
-  </div>
-  {% endif %}
+
+  {% set msgs = {
+    'cartao': 'Escolha um cartão cadastrado (aba Cartões) para parcelas de cartão. Nada foi cadastrado.',
+    'forma': 'Escolha uma forma de pagamento válida. Nada foi cadastrado.',
+    'parcela': 'A parcela atual precisa estar entre 1 e o total de parcelas. Nada foi cadastrado.',
+    'dia': 'Dia do vencimento inválido. Nada foi cadastrado.',
+    'mes': 'Mês da parcela atual inválido. Nada foi cadastrado.',
+  } %}
+  {% if erro %}{{ m.erro(msgs.get(erro, erro)) }}{% endif %}
   {% if criadas is not none %}
-  <div class="panel" style="border-color: #34d399;">
-    Importação concluída: {{ criadas }} compra(s) criada(s) e {{ atualizadas }} atualizada(s).
-  </div>
+    {{ m.sucesso('Importação concluída: ' ~ criadas ~ ' compra(s) criada(s) e ' ~ atualizadas ~ ' atualizada(s).') }}
   {% endif %}
+  {% if ok == 'editado' %}{{ m.sucesso('Parcelamento atualizado.') }}{% endif %}
 
   <section class="cards">
     <div class="card"><small>Saldo a pagar</small><div class="val bad">{{ saldo_total | brl }}</div></div>
-    <div class="card"><small>Saldo a receber</small><div class="val" style="color:#34d399">{{ saldo_receber | brl }}</div></div>
+    <div class="card"><small>Saldo a receber</small><div class="val ok">{{ saldo_receber | brl }}</div></div>
     <div class="card"><small>Parcelamentos ativos</small><div class="val">{{ (plans_pagar + plans_receber) | rejectattr('concluido') | list | length }}</div></div>
   </section>
 
   <p><a class="btn" href="{{ base() }}/parcelados/importar">Importar fatura do Nubank</a></p>
+
   <h2>Parcelas por mês (próximos 12 meses)</h2>
   <div class="panel">
-    <div style="position:relative;height:280px"><canvas id="chartParcelas"></canvas></div>
+    <div class="chart"><canvas id="chartParcelas"></canvas></div>
   </div>
 
   <h2>Novo parcelamento</h2>
   <div class="panel">
-    <form class="grid novo-parcelamento" method="post" action="{{ base() }}/parcelados">
+    <form class="grid" style="--cols: 7" method="post" action="{{ base() }}/parcelados">
       <label class="span2">Descrição<input name="description" required></label>
       <label>Forma de pagamento
         <select name="payment_method">
@@ -105,20 +101,19 @@
           <option value="outro">Outro</option>
         </select>
       </label>
-      <label>Cartão (se for cartão)
+      <label>Cartão (opcional)
         <select name="card_name">
-  <option value="">— escolher —</option>
-  {% for c in cards %}<option value="{{ c.name }}"{% if c.name == card_name %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
-</select>
-
+          <option value="">— nenhum —</option>
+          {% for c in cards %}<option value="{{ c.name }}"{% if c.name == card_name %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </select>
       </label>
       <label>Valor da parcela (R$)<input name="amount" placeholder="150,00" required></label>
       <label>Total de parcelas<input type="number" name="total" min="1" required></label>
       <label>Parcela atual<input type="number" name="current_n" min="1" value="1" required></label>
-      <label class="span2">Mês ano da parcela atual
-        <span style="display:flex;gap:.5rem">
-          <select name="mes_num" style="flex:1">{% for num, nome in meses %}<option value="{{ num }}"{% if num == mes_atual_num %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select>
-          <select name="ano" style="flex:1">{% for a in anos %}<option value="{{ a }}"{% if a == ano_atual %} selected{% endif %}>{{ a }}</option>{% endfor %}</select>
+      <label class="span2">Mês e ano da parcela atual
+        <span class="duo">
+          <select name="mes_num">{% for num, nome in meses %}<option value="{{ num }}"{% if num == mes_atual_num %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select>
+          <select name="ano">{% for a in anos %}<option value="{{ a }}"{% if a == ano_atual %} selected{% endif %}>{{ a }}</option>{% endfor %}</select>
         </span>
       </label>
       <label>Vencimento
@@ -128,7 +123,7 @@
         </select>
       </label>
       <label class="span3">Categorias (separadas por vírgula)<input name="categorias" placeholder="mercado, lazer"></label>
-      <button type="submit" class="primary cadastrar">Cadastrar</button>
+      <button type="submit" class="primary">Adicionar</button>
     </form>
     <p class="aviso">Parcelas de cartão ficam só nesta tela, porque já estão na fatura. Marque cada uma como paga quando a fatura for paga. As demais entram no Início automaticamente, no mês de cada parcela. Compras feitas para outra pessoa entram pela importação da fatura, na seção A receber.</p>
   </div>
@@ -142,11 +137,8 @@
   {% else %}<p class="muted">Nenhum parcelamento a pagar.</p>{% endfor %}
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+{% include "_chart.html" %}
 <script>
-Chart.defaults.color = '#9aa3b2';
-Chart.defaults.borderColor = '#2a2f3a';
-const reais = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 const G = {{ graficos | tojson }};
 new Chart(document.getElementById('chartParcelas'), {
   type: 'bar',

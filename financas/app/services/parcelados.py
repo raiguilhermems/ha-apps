@@ -188,6 +188,7 @@ def schedule_summaries(session: Session) -> dict:
     saldo_pagar = 0
     saldo_receber = 0
     tags_map = {c.name: c.id for c in session.exec(select(Tag)).all()}
+    kinds_map = {c.name: c.kind for c in session.exec(select(Tag)).all()}
 
     for p in session.exec(select(InstallmentPlan)).all():
         receber = p.tipo == "receber"
@@ -247,7 +248,7 @@ def schedule_summaries(session: Session) -> dict:
             cartao_nome = acc.name if acc else ""
 
         if receber:
-            forma_label = f"A receber · {p.pessoa}" if p.pessoa else "A receber"
+            forma_label = f"A receber · {p.pessoa.lower()}" if p.pessoa else "A receber"
         elif p.payment_method == "cartao":
             forma_label = f"Cartão {cartao_nome}".strip()
         else:
@@ -260,7 +261,7 @@ def schedule_summaries(session: Session) -> dict:
             "pessoa": p.pessoa,
             "descricao": p.description,
             "categorias": [
-                {"nome": n, "id": tags_map.get(n)}
+                {"nome": n, "id": tags_map.get(n), "kind": kinds_map.get(n, "categoria")}
                 for n in parse_tags(p.tags_text)
                 # Em "receber", o nome da pessoa já aparece no link do plano; não repete aqui
                 if not (receber and n == _nome_pessoa(p.pessoa))

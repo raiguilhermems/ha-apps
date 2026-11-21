@@ -1,0 +1,35 @@
+{# Chart.js e as funções de gráfico compartilhadas. Inclua antes do script da tela. #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+Chart.defaults.color = '#9aa3b2';
+Chart.defaults.borderColor = '#2a2f3a';
+const reais = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+// Barras de receita e despesa por mês. Meses futuros saem mais claros; o mês atual tem contorno.
+function graficoReceitasDespesas(el, G) {
+  return new Chart(el, {
+    type: 'bar',
+    data: {
+      labels: G.labels,
+      datasets: [
+        {
+          label: 'Receitas', data: G.receitas,
+          backgroundColor: G.futuro.map(f => f ? '#34d39966' : '#34d399'),
+          borderColor: G.atual.map(a => a ? '#e6e9ef' : 'transparent'),
+          borderWidth: G.atual.map(a => a ? 2 : 0)
+        },
+        {
+          label: 'Despesas', data: G.despesas,
+          backgroundColor: G.futuro.map(f => f ? '#f8717166' : '#f87171'),
+          borderColor: G.atual.map(a => a ? '#e6e9ef' : 'transparent'),
+          borderWidth: G.atual.map(a => a ? 2 : 0)
+        }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true, ticks: { callback: v => reais(v) } } },
+      plugins: { tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + reais(c.parsed.y) } } }
+    }
+  });
+}
+</script>

@@ -3,22 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ inv.nome }}</title>
+  <title>Caixinha · Finanças</title>
   {% include "_style.html" %}
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
-  <p><a href="{{ base() }}/investimentos">‹ Investimentos</a></p>
+  {{ m.voltar(base() ~ '/investimentos') }}
   <h1>{{ inv.nome }} <span class="pill">{{ tipos.get(inv.tipo, inv.tipo) }}</span></h1>
-  {% if erro %}
-  <div class="panel" style="border-color: var(--bad);">{{ erro }}</div>
-  {% endif %}
+
+  {% if erro %}{{ m.erro(erro) }}{% endif %}
 
   <section class="cards">
     <div class="card"><small>Valor atual</small><div class="val">{{ inv.valor_cents | brl }}</div></div>
     <div class="card"><small>Variação desde o primeiro registro</small>
-      <div class="val" style="color: {{ '#34d399' if variacao_total >= 0 else '#f87171' }}">{{ variacao_total | brl }}</div>
+      <div class="val {{ 'ok' if variacao_total >= 0 else 'bad' }}">{{ variacao_total | brl }}</div>
     </div>
     <div class="card"><small>Última atualização</small><div class="val">{{ inv.atualizado_em.strftime('%d/%m/%Y') }}</div></div>
   </section>
@@ -26,7 +26,7 @@
   <h2>Evolução</h2>
   <div class="panel">
     {% if hist %}
-    <div style="position:relative;height:240px"><canvas id="chartCaixinha"></canvas></div>
+    <div class="chart"><canvas id="chartCaixinha"></canvas></div>
     {% else %}
     <p class="muted">Sem registros ainda.</p>
     {% endif %}
@@ -34,36 +34,38 @@
 
   <h2>Atualizar valor</h2>
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/investimentos/{{ inv.id }}/valor">
+    <form class="grid" style="--cols: 3" method="post" action="{{ base() }}/investimentos/{{ inv.id }}/valor">
       <input type="hidden" name="volta" value="detalhe">
       <label>Novo valor (R$)<input name="valor" placeholder="1.000,00" required></label>
       <label>Data a que se refere<input type="date" name="data" value="{{ hoje }}"></label>
-      <button type="submit" class="primary">Registrar</button>
+      <button type="submit" class="primary">Atualizar</button>
     </form>
   </div>
 
   <h2>Histórico</h2>
   {% if hist %}
-  <table>
-    <thead><tr><th>Data</th><th>Valor</th><th>Variação</th></tr></thead>
-    <tbody>
-    {% for h in hist | reverse %}
-    <tr>
-      <td>{{ h.data.strftime('%d/%m/%Y') }}</td>
-      <td>{{ h.valor | brl }}</td>
-      <td>
-        {% if h.variacao is none %}<span class="muted">—</span>
-        {% else %}<span style="color: {{ '#34d399' if h.variacao >= 0 else '#f87171' }}">{{ h.variacao | brl }}</span>{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <div class="panel">
+    <table>
+      <thead><tr><th>Data</th><th>Valor</th><th>Variação</th></tr></thead>
+      <tbody>
+      {% for h in hist | reverse %}
+      <tr>
+        <td>{{ h.data.strftime('%d/%m/%Y') }}</td>
+        <td>{{ h.valor | brl }}</td>
+        <td>
+          {% if h.variacao is none %}<span class="muted">—</span>
+          {% else %}<span class="{{ 'ok' if h.variacao >= 0 else 'bad' }}">{{ h.variacao | brl }}</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% endif %}
 
-  <h2>Editar caixinha</h2>
+  <h2 id="editar">Editar caixinha</h2>
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/investimentos/{{ inv.id }}/editar">
+    <form class="grid" style="--cols: 3" method="post" action="{{ base() }}/investimentos/{{ inv.id }}/editar">
       <label>Nome<input name="nome" value="{{ inv.nome }}" required></label>
       <label>Tipo
         <select name="tipo">
@@ -72,24 +74,22 @@
       </label>
       <button type="submit" class="primary">Salvar</button>
     </form>
-    <form class="inline" method="post" action="{{ base() }}/investimentos/{{ inv.id }}/excluir" onsubmit="return confirm('Excluir esta caixinha e todo o histórico dela?')">
-      <button type="submit" class="danger">Excluir caixinha</button>
-    </form>
+    <div class="acoes esq topo">
+      <form class="inline" method="post" action="{{ base() }}/investimentos/{{ inv.id }}/excluir" onsubmit="return confirm('Excluir esta caixinha e todo o histórico dela?')">
+        <button type="submit" class="danger">Excluir caixinha</button>
+      </form>
+    </div>
   </div>
 </div>
 
 {% if hist %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+{% include "_chart.html" %}
 <script>
-Chart.defaults.color = '#9aa3b2';
-Chart.defaults.borderColor = '#2a2f3a';
-const reais = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-const G = {{ grafico | tojson }};
 new Chart(document.getElementById('chartCaixinha'), {
   type: 'line',
   data: {
-    labels: G.labels,
-    datasets: [{ label: 'Valor', data: G.valores, borderColor: '#4f8cff', backgroundColor: 'rgba(79,140,255,0.15)', fill: true, tension: 0.25 }]
+    labels: {{ grafico.labels | tojson }},
+    datasets: [{ label: 'Valor', data: {{ grafico.valores | tojson }}, borderColor: '#4f8cff', backgroundColor: 'rgba(79,140,255,0.15)', fill: true, tension: 0.25 }]
   },
   options: {
     maintainAspectRatio: false,

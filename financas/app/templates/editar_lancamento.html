@@ -3,16 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Editar lançamento</title>
+  <title>Editar lançamento · Finanças</title>
   {% include "_style.html" %}
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
+  {{ m.voltar(base() ~ '/?mes=' ~ tx.due_date.strftime('%Y-%m')) }}
   <h1>Editar lançamento</h1>
+
+  {% if erro %}{{ m.erro(erro) }}{% endif %}
+
   <div class="panel">
-    <form class="grid" method="post" action="{{ base() }}/lancamentos/{{ tx.id }}/editar">
-      <label>Descrição<input name="description" value="{{ tx.description }}" required></label>
+    <form class="grid" style="--cols: 5" method="post" action="{{ base() }}/lancamentos/{{ tx.id }}/editar">
+      <label class="span2">Descrição<input name="description" value="{{ tx.description }}" required></label>
       <label>Valor (R$)<input name="amount" value="{{ '%.2f'|format(tx.amount_cents / 100) | replace('.', ',') }}" required></label>
       <label>Vencimento<input type="date" name="due_date" value="{{ tx.due_date.isoformat() }}" required></label>
       <label>Tipo
@@ -21,12 +26,11 @@
           <option value="receita" {{ 'selected' if tx.kind == 'receita' }}>Receita</option>
         </select>
       </label>
-      <label>Terceiros (R$)<input name="third_party" value="{{ third_text }}" placeholder="0,00"></label>
-      <label>Categorias<input name="tags" value="{{ tags_text }}" placeholder="ex.: mercado, lazer"></label>
+      <label>Terceiros (R$, só despesa)<input name="third_party" value="{{ third_text }}" placeholder="0,00"></label>
+      <label class="span3">Categorias (separadas por vírgula)<input name="tags" value="{{ tags_text }}" placeholder="mercado, lazer"></label>
       <button type="submit" class="primary">Salvar</button>
     </form>
   </div>
-  <p><a href="{{ base() }}/?mes={{ tx.due_date.strftime('%Y-%m') }}">‹ Voltar</a></p>
 </div>
 </body>
 </html>

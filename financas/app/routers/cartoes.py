@@ -35,7 +35,12 @@ def _cartao(session: Session, cartao_id: int) -> Account:
 
 
 @router.get("/cartoes")
-def cartoes_page(request: Request, erro: str | None = None, session: Session = Depends(get_session)):
+def cartoes_page(
+    request: Request,
+    erro: str | None = None,
+    ok: str | None = None,
+    session: Session = Depends(get_session),
+):
     cartoes = listar(session)
     return templates.TemplateResponse(
         request,
@@ -43,6 +48,7 @@ def cartoes_page(request: Request, erro: str | None = None, session: Session = D
         {
             "cartoes": cartoes,
             "erro": erro,
+            "ok": ok,
             "vinculos": {c.id: vinculos(session, c) for c in cartoes},
         },
     )
@@ -56,7 +62,7 @@ def criar_cartao(nome: str = Form(...), dia: str = Form(""), session: Session = 
         session.rollback()
         return _erro(str(e))
     session.commit()
-    return RedirectResponse("/cartoes", status_code=303)
+    return RedirectResponse("/cartoes?ok=criado", status_code=303)
 
 
 @router.post("/cartoes/{cartao_id}/atualizar")
@@ -73,7 +79,7 @@ def atualizar_cartao(
         session.rollback()
         return _erro(str(e))
     session.commit()
-    return RedirectResponse("/cartoes", status_code=303)
+    return RedirectResponse("/cartoes?ok=salvo", status_code=303)
 
 
 @router.post("/cartoes/{cartao_id}/excluir")
@@ -85,4 +91,4 @@ def excluir_cartao(cartao_id: int, session: Session = Depends(get_session)):
         session.rollback()
         return _erro(str(e))
     session.commit()
-    return RedirectResponse("/cartoes", status_code=303)
+    return RedirectResponse("/cartoes?ok=excluido", status_code=303)

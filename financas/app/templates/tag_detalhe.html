@@ -3,91 +3,72 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Categoria {{ tag.name }}</title>
+  <title>Categoria · Finanças</title>
   {% include "_style.html" %}
 </head>
 <body>
 {% include "_nav.html" %}
+{% import "_macros.html" as m %}
 <div class="wrap">
-  <p><a href="{{ base() }}/categorias">‹ Categorias</a></p>
-  <h1>{{ tag.name | capitalize }}
+  {{ m.voltar(base() ~ '/categorias') }}
+  <h1>{{ tag.name if tag.kind == 'categoria' else tag.name | lower }}
     {% if tag.excludes_from_total %}<span class="pill">não soma no total</span>{% endif %}
-    {% if tag.kind == 'pessoa' %}<span class="pill">pessoa</span>{% else %}<span class="pill">categoria</span>{% endif %}
+    {% if tag.kind == 'pessoa' %}<span class="pill">pessoa</span>{% elif tag.kind == 'recorrente' %}<span class="pill">recorrente</span>{% else %}<span class="pill">categoria</span>{% endif %}
   </h1>
+  <div class="acoes esq">
+    {% if tag.kind == 'recorrente' %}
+      <a class="btn small" href="{{ base() }}/recorrentes">Editar na aba Recorrentes</a>
+    {% else %}
+      <a class="btn small" href="{{ base() }}/categorias/{{ tag.id }}/editar">Editar</a>
+    {% endif %}
+  </div>
 
   <h2>Evolução da categoria</h2>
   <div class="panel">
-    <p class="aviso">Últimos {{ antes }} meses ({{ soma6.inicio | mes }} a {{ soma6.fim | mes }}): receitas <strong class="pago">{{ soma6.receitas | brl }}</strong> · despesas <strong style="color:#f87171">{{ soma6.despesas | brl }}</strong></p>
-    <div style="position:relative;height:240px"><canvas id="chartCategoria"></canvas></div>
+    <p class="aviso">Últimos {{ antes }} meses ({{ soma6.inicio | mes }} a {{ soma6.fim | mes }}): receitas <strong class="ok">{{ soma6.receitas | brl }}</strong> · despesas <strong class="bad">{{ soma6.despesas | brl }}</strong></p>
+    <div class="chart"><canvas id="chartCategoria"></canvas></div>
+    <p class="aviso">Barras mais claras são meses ainda não fechados. O contorno marca o mês atual.</p>
   </div>
 
-  <div class="monthbar">
-    <a href="{{ base() }}/categorias/{{ tag.id }}?mes={{ prev }}">‹ {{ prev | mes }}</a>
-    <strong>{{ ref | mes }}</strong>
-    <a href="{{ base() }}/categorias/{{ tag.id }}?mes={{ next }}">{{ next | mes }} ›</a>
-  </div>
+  {{ m.mesnav(base() ~ '/categorias/' ~ tag.id, ref) }}
 
   <section class="cards">
-    <div class="card"><small>Despesas da categoria</small><div class="val" style="color:#f87171">{{ despesas | brl }}</div></div>
-    <div class="card"><small>Receitas da categoria</small><div class="val pago">{{ receitas | brl }}</div></div>
+    <div class="card"><small>Despesas da categoria</small><div class="val bad">{{ despesas | brl }}</div></div>
+    <div class="card"><small>Receitas da categoria</small><div class="val ok">{{ receitas | brl }}</div></div>
   </section>
 
   <h2>Lançamentos no mês</h2>
   {% if rows %}
-  <table>
-    <thead><tr><th>Vencimento</th><th>Descrição</th><th>Conta</th><th>Tipo</th><th>Valor</th><th>Status</th></tr></thead>
-    <tbody>
-    {% for r in rows %}
-    <tr>
-      <td>{{ r.tx.due_date.strftime('%d/%m') }}</td>
-      <td class="desc">{{ r.tx.description }}</td>
-      <td class="muted">{{ r.conta }}</td>
-      <td class="muted">{{ 'Despesa' if r.tx.kind == 'despesa' else 'Receita' }}</td>
-      <td style="color: {{ '#34d399' if r.tx.kind == 'receita' else '#f87171' }}">{{ r.tx.amount_cents | brl }}</td>
-      <td>
-        {% if r.tx.status == 'pago' %}<span class="pill ok">Pago</span>
-        {% else %}<span class="pill">Pendente</span>{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <div class="panel">
+    <table>
+      <thead><tr><th>Vencimento</th><th class="desc">Descrição</th><th>Conta</th><th>Tipo</th><th>Valor</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+      {% set atrasada = r.tx.kind == 'despesa' and r.tx.status == 'pendente' and r.tx.due_date < today %}
+      <tr class="linha-{{ r.tx.kind }}">
+        <td>{{ r.tx.due_date.strftime('%d/%m') }}</td>
+        <td class="desc">{{ r.tx.description }}</td>
+        <td class="muted">{{ r.conta }}</td>
+        <td class="muted">{{ 'Despesa' if r.tx.kind == 'despesa' else 'Receita' }}</td>
+        <td class="{{ 'ok' if r.tx.kind == 'receita' else 'bad' }}">{{ r.tx.amount_cents | brl }}</td>
+        <td class="status">
+          {% if r.tx.status == 'pago' %}<span class="pill ok">{{ 'Recebido' if r.tx.kind == 'receita' else 'Pago' }}</span>
+          {% elif atrasada %}<span class="pill bad">Atrasado</span>
+          {% else %}<span class="pill">{{ 'A receber' if r.tx.kind == 'receita' else 'Pendente' }}</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
   <p class="muted">Nenhum lançamento com esta categoria neste mês.</p>
   {% endif %}
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+{% include "_chart.html" %}
 <script>
-Chart.defaults.color = '#9aa3b2';
-Chart.defaults.borderColor = '#2a2f3a';
-const reais = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-const G = {{ grafico | tojson }};
-new Chart(document.getElementById('chartCategoria'), {
-  type: 'bar',
-  data: {
-    labels: G.labels,
-    datasets: [
-      {
-        label: 'Receitas', data: G.receitas,
-        backgroundColor: G.futuro.map(f => f ? '#34d39966' : '#34d399'),
-        borderColor: G.atual.map(a => a ? '#e6e9ef' : 'transparent'),
-        borderWidth: G.atual.map(a => a ? 2 : 0)
-      },
-      {
-        label: 'Despesas', data: G.despesas,
-        backgroundColor: G.futuro.map(f => f ? '#f8717166' : '#f87171'),
-        borderColor: G.atual.map(a => a ? '#e6e9ef' : 'transparent'),
-        borderWidth: G.atual.map(a => a ? 2 : 0)
-      }
-    ]
-  },
-  options: {
-    maintainAspectRatio: false,
-    scales: { y: { beginAtZero: true, ticks: { callback: v => reais(v) } } },
-    plugins: { tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + reais(c.parsed.y) } } }
-  }
-});
+graficoReceitasDespesas(document.getElementById('chartCategoria'), {{ grafico | tojson }});
 </script>
 </body>
 </html>
