@@ -17,20 +17,24 @@ Controle financeiro pessoal para o Home Assistant. Roda como add-on, guarda os d
 
 | | |
 |---|---|
-| ![Início](docs/inicio.png) | ![Parcelados](docs/parcelados.png) |
-| ![Recorrentes](docs/recorrentes.png) | ![Categorias](docs/categorias.png) |
-| ![Cartões](docs/cartoes.png) | ![Investimentos](docs/investimentos.png) |
+| ![Início](docs/inicio.png) | ![Recorrentes](docs/recorrentes.png) |
+| ![Parcelados](docs/parcelados.png) | ![Investimentos](docs/investimentos.png) |
 
 <details>
 <summary>Mais capturas</summary>
 
-![Início, outra visão](docs/inicio1.png)
-![Parcelados, outra visão](docs/parcelados1.png)
+![Categorias](docs/categorias.png)
+![Detalhe de uma categoria](docs/categoria_detalhe.png)
+![Cartões](docs/cartoes.png)
 ![Importação da fatura](docs/importar.png)
 ![Prévia da primeira importação](docs/importar1.png)
 ![Prévia do mês seguinte](docs/importar2.png)
 ![Detalhe de uma caixinha](docs/investimento_detalhe.png)
 ![Configurações](docs/configuracoes.png)
+![Editar lançamento](docs/editar_lancamento.png)
+![Editar parcelamento](docs/editar_parcelado.png)
+![Editar recorrência](docs/editar_recorrente.png)
+![Editar categoria](docs/editar_categoria.png)
 
 </details>
 
