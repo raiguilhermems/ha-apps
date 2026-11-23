@@ -13,6 +13,7 @@ from app.services.tags import (
     set_tags,
     validar_categorias_livres,
 )
+from app.services.cartoes import vencimento_fatura
 from app.services.util import add_months, current_month, due_in_month, month_bounds
 
 
@@ -102,6 +103,13 @@ def aplicar_categoria(session: Session, rule: RecurringRule, categorias: str) ->
     session.flush()
 
 
+def _vencimento(rule: RecurringRule, ref: str):
+    """Recorrente de cartão segue a regra da fatura: fim de semana vai para o próximo dia útil."""
+    if rule.account_id and rule.day_of_month > 0:
+        return vencimento_fatura(ref, rule.day_of_month)
+    return due_in_month(ref, rule.day_of_month)
+
+
 def generate_all(session: Session, months_ahead: int = 12) -> int:
     """Gera lançamentos das regras ativas do mês atual até `months_ahead` meses à frente."""
     base = current_month()
@@ -132,7 +140,7 @@ def generate_all(session: Session, months_ahead: int = 12) -> int:
                 tx = Transaction(
                     description=rule.description,
                     amount_cents=rule.expected_cents,
-                    due_date=due_in_month(m, rule.day_of_month),
+                    due_date=_vencimento(rule, m),
                     kind=rule.kind,
                     account_id=rule.account_id,
                     recurring_rule_id=rule.id,

@@ -4,7 +4,12 @@ from sqlmodel import Session
 
 from app.models import Setting
 
-DEFAULTS = {"dia_padrao": "10", "grafico_antes": "6", "grafico_depois": "3"}
+DEFAULTS = {
+    "dia_padrao": "10",
+    "grafico_antes": "6",
+    "grafico_depois": "3",
+    "taxa_desconto": "10.58",
+}
 
 
 def get_setting(session: Session, key: str) -> str:
@@ -31,3 +36,12 @@ def get_int_setting(session: Session, key: str, minimo: int, maximo: int) -> int
     except ValueError:
         valor = int(DEFAULTS[key])
     return min(max(valor, minimo), maximo)
+
+
+def get_taxa_desconto(session: Session) -> float:
+    """Taxa anual em % usada para estimar o desconto de antecipação. Valor inválido volta ao padrão."""
+    try:
+        valor = float(get_setting(session, "taxa_desconto").replace(",", "."))
+    except ValueError:
+        valor = float(DEFAULTS["taxa_desconto"])
+    return min(max(valor, 0.0), 100.0)

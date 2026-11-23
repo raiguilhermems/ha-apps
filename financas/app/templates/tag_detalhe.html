@@ -11,7 +11,7 @@
 {% import "_macros.html" as m %}
 <div class="wrap">
   {{ m.voltar(base() ~ '/categorias') }}
-  <h1>{{ tag.name if tag.kind == 'categoria' else tag.name | lower }}
+  <h1>{{ tag.name | pessoa if tag.kind == 'pessoa' else tag.name | lower }}
     {% if tag.excludes_from_total %}<span class="pill">não soma no total</span>{% endif %}
     {% if tag.kind == 'pessoa' %}<span class="pill">pessoa</span>{% elif tag.kind == 'recorrente' %}<span class="pill">recorrente</span>{% else %}<span class="pill">categoria</span>{% endif %}
   </h1>

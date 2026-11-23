@@ -27,3 +27,10 @@ def test_due_in_month_primeiro_dia_util():
     assert due_in_month("2026-11", 0) == date(2026, 11, 2)
     # 1º de agosto de 2026 é sábado: o 1º dia útil é 3
     assert due_in_month("2026-08", 0) == date(2026, 8, 3)
+
+
+def test_nome_proprio_capitaliza_cada_palavra():
+    from app.services.util import nome_proprio
+    assert nome_proprio("ana lima") == "Ana Lima"
+    assert nome_proprio("joão da silva") == "João da Silva"
+    assert nome_proprio("  maria   dos santos ") == "Maria dos Santos"

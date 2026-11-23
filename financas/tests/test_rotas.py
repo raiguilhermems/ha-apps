@@ -47,6 +47,7 @@ ROTAS_ESPERADAS = {
     ("POST", "/configuracoes/apagar"),
     ("POST", "/configuracoes/dia_padrao"),
     ("POST", "/configuracoes/grafico"),
+    ("POST", "/configuracoes/taxa")
 }
 
 

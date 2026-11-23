@@ -14,6 +14,9 @@ from app.models import Account, InstallmentPlan, Tag, Transaction, TransactionTa
 from app.services.recurring import get_or_create_card
 from app.services.tags import PESSOA, parse_tags, reservar_categoria, set_tags
 from app.services.util import add_months, current_month, due_in_month
+from app.services.settings import get_taxa_desconto
+from app.services.util import nome_proprio
+
 
 FORMAS = {
     "cartao": "Cartão",
@@ -189,6 +192,7 @@ def schedule_summaries(session: Session) -> dict:
     saldo_receber = 0
     tags_map = {c.name: c.id for c in session.exec(select(Tag)).all()}
     kinds_map = {c.name: c.kind for c in session.exec(select(Tag)).all()}
+    taxa = get_taxa_desconto(session)
 
     for p in session.exec(select(InstallmentPlan)).all():
         receber = p.tipo == "receber"
@@ -234,6 +238,17 @@ def schedule_summaries(session: Session) -> dict:
                 "tx_id": tx_id,
             })
 
+        # Desconto estimado só para parcelas futuras (meses após o atual) ainda não pagas.
+        # A parcela do mês corrente está aberta e não pode ser antecipada.
+        desconto = 0
+        if not receber:
+            desconto = desconto_antecipacao(
+                [(r["vencimento"], r["valor"]) for r in rows
+                 if r["status"] == "pendente" and r["mes"] > base],
+                today,
+                taxa,
+            )
+
         restantes = p.installments_total - pagas
         concluido = restantes == 0
         if not concluido:
@@ -248,7 +263,7 @@ def schedule_summaries(session: Session) -> dict:
             cartao_nome = acc.name if acc else ""
 
         if receber:
-            forma_label = f"A receber · {p.pessoa.lower()}" if p.pessoa else "A receber"
+            forma_label = f"A receber · {nome_proprio(p.pessoa)}" if p.pessoa else "A receber"
         elif p.payment_method == "cartao":
             forma_label = f"Cartão {cartao_nome}".strip()
         else:
@@ -272,6 +287,7 @@ def schedule_summaries(session: Session) -> dict:
             "pagas": pagas,
             "restantes": restantes,
             "saldo": saldo,
+            "desconto": desconto,
             "concluido": concluido,
             "rows": rows,
         })
@@ -366,3 +382,16 @@ def delete_plan(session: Session, plan: InstallmentPlan) -> None:
             session.add(t)
     session.flush()
     session.delete(plan)
+
+
+def desconto_antecipacao(parcelas: list[tuple[date, int]], hoje: date, taxa_pct: float) -> int:
+    """Soma do desconto (em centavos) de quitar antes do vencimento as parcelas (vencimento, valor)."""
+    taxa = taxa_pct / 100
+    total = 0
+    for vencimento, valor in parcelas:
+        dias = (vencimento - hoje).days
+        if dias <= 0:
+            continue
+        presente = valor * (1 + taxa) ** (-dias / 365)
+        total += round(valor - presente)
+    return total

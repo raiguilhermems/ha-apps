@@ -7,6 +7,7 @@ Controle financeiro pessoal para o Home Assistant. Roda como add-on, guarda os d
 - Receitas e despesas por mês, pela data de vencimento
 - Recorrentes com valor fixo ou variável
 - Parcelados de cartão, boleto, carnê ou financiamento
+- Estimativa de desconto para quitar parcelas antes do vencimento, com taxa configurável
 - Importação da fatura do Nubank (CSV), com prévia antes de gravar
 - Cartões com dia de pagamento
 - Categorias com relatório mensal

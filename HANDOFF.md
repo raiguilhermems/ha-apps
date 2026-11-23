@@ -1,6 +1,6 @@
 # HANDOFF — FinHome (antes Finanças; app de finanças pessoais para Home Assistant)
 
-Use este arquivo para retomar o projeto em um novo chat. Estado em 21/11/2026 (versão 2026.11.0).
+Use este arquivo para retomar o projeto em um novo chat. Estado em 23/11/2026 (versão 2026.11.1).
 
 ## 1. Arquitetura e stack
 
@@ -30,6 +30,7 @@ Regras de nome:
 - Categoria comum com nome de pessoa é promovida a pessoa (se não estiver em uso fora do total).
 - Lançamento manual ou digitado (inclusive na importação e nos parcelados) com nome de recorrente é bloqueado, com mensagem e sem gravar nada. Ao editar um lançamento que veio da recorrência, o próprio nome não bloqueia.
 - Duas recorrências com o mesmo nome também são bloqueadas.
+- Exibição: pessoa com primeira letra de cada palavra maiúscula (`nome_proprio` em `util.py`, filtro `pessoa`); categoria e recorrente em minúsculas. O nome é salvo sempre em minúsculas (`parse_tags`), então a exibição não muda a regra de unicidade.
 - Renomear recorrente ou pessoa propaga para categorias, planos e lançamentos pendentes. O histórico segue o id da tag.
 - Excluir uma recorrência transforma a categoria dela em categoria comum (mantém o histórico).
 - Recorrentes antigas recebem categoria automaticamente em `generate_all` (backfill). Conflitos de nome ficam sem categoria e aparecem marcados como "sem categoria" na tela Recorrentes.
@@ -50,7 +51,8 @@ Regras de nome:
   - Se alguma linha estiver marcada sem nome, nada é gravado.
   - Categorias digitadas na prévia são conferidas antes de gravar (nome de recorrente bloqueia, nada é gravado).
 - **Tela Parcelados:** seção "A receber" primeiro, depois "A pagar". Cards: Saldo a pagar, Saldo a receber, Parcelamentos ativos.
-- **Cadastro e edição de parcelamento:** categorias conferidas da mesma forma. No cadastro, o erro aparece como mensagem genérica até `parcelados.html` ganhar o código `categoria` (ver seção 5).
+- **Desconto por antecipação (2026.11.1):** estimativa mostrada no plano a pagar, com as parcelas dos meses seguintes (o mês atual fica de fora, pois está aberto). Juros compostos com taxa efetiva anual: `valor / (1 + taxa)^(dias/365)`, com `dias` a partir de hoje. Taxa em Configurações (`taxa_desconto`, padrão 10,58). Função `desconto_antecipacao` em `parcelados.py`, que recebe a lista `(vencimento, valor)`. Planos a receber não têm desconto.
+- **Cadastro e edição de parcelamento:** categorias conferidas da mesma forma. O erro aparece como aviso na própria tela (0.0.22).
 
 ## 4. Início e gráficos (regras vigentes)
 
@@ -76,6 +78,7 @@ Regras de nome:
   - Atenção: cria a coluna `recurring_rule.tag_id` (migração automática).
 - **Versão 2026.11.0 (nome FinHome, ícone e versão na tela):** nome, slug e títulos das telas trocados; ícone no topo e favicon (`_nav.html`, `_style.html`); versão em Configurações (`web.py`, `configuracoes.html`); menu reordenado (Início, Recorrentes, Parcelados, Investimentos, Categorias, Cartões, Configurações); espaço entre título e navegação de mês corrigido; `seed_demo.py` com cartões, pessoas a receber e recorrente pausada; scripts de demonstração funcionam sem `PYTHONPATH`.
 - **Versão 0.0.22 (visual e mensagens):** telas padronizadas (`_style.html`, `_macros.html`, `_chart.html`); ações das listas em ícones; erros de cadastro e edição em banner nas telas; confirmações de sucesso; capitalização (pessoa e recorrente em minúsculas, categoria como digitada); nome de categoria conferido com `reservar_categoria` ao criar; `ValueError` de parcelados, pessoa e lançamentos tratado como banner (sem 500); `tags_com_id_by_tx` e as categorias do plano e da recorrência trazem `kind`.
+- **Versão 2026.11.1:** desconto por antecipação (Parcelados e Configurações, `taxa_desconto`); pessoas com primeira letra maiúscula na exibição; recorrente de cartão com ajuste de fim de semana em `generate_all` (`vencimento_fatura`); testes do desconto e do fim de semana.
 - Início com receitas e despesas separadas, status, atrasados e gráfico.
 - Parcelados (pagar e receber), com edição e exclusão.
 - Importação da fatura do Nubank (CSV): prévia, reconhecimento de compras já cadastradas e ignoradas, reimportação no mês seguinte, mensagem de resultado após gravar.
@@ -91,10 +94,10 @@ Regras de nome:
 Ordem sugerida. Itens com (usuário) dependem de decisão ou ação sua.
 
 1. ~~**Mensagem de categoria em parcelados**~~ feito na 0.0.22 (a mensagem real vem do servidor).
-2. **Hiperlink da recorrente** no Início e em Recorrentes (a categoria já existe; falta o link visível).
+2. ~~**Hiperlink da recorrente** no Início~~ já existia (`cat_pill` em `_macros.html`), conferido na 2026.11.1. Em Recorrentes, ainda não conferido.
 3. **Tela de evolução mensal da recorrente:** ver salário, luz, gás ao longo dos meses (todos os meses ou um período).
 4. **Compra parcelada como filtro:** o tipo "compra" com categoria própria, para filtrar uma compra parcelada como já se faz com pessoa.
-5. **Selo "recorrente"** em `tag_detalhe.html`, como já existe para categoria e pessoa.
+5. ~~**Selo "recorrente"**~~ já existe em `tag_detalhe.html` (conferido na 2026.11.1).
 6. **Liberar nome de recorrente excluída** quando a categoria antiga não tiver lançamentos (hoje fica bloqueado).
 7. **Fatura do cartão como total mensal** (não coberto).
 8. **Filtros livres de categoria** (não coberto).
@@ -105,11 +108,11 @@ Ordem sugerida. Itens com (usuário) dependem de decisão ou ação sua.
    - Faixas verde e vermelha em parcelados usam cores inline. Conferir visualmente.
    - Validar a conversão de parcelado em a receber com uma fatura de teste antes de usar na real (ela apaga parcelas pendentes do cartão).
    - Planos a receber criados antes da categoria automática não têm a categoria da pessoa. Ajuste único, se quiser.
-   - `tag_detalhe.html` usa `capitalize`: "João Silva" vira "João silva". Trocar por `title` muda outros nomes ("tv a cabo" vira "Tv A Cabo"). Decidir.
+   - ~~`tag_detalhe.html` usa `capitalize`~~ Resolvido na 2026.11.1: pessoa com `nome_proprio`; categoria e recorrente em `lower`.
    - Renomear uma pessoa em Categorias já atualiza `installment_plan.pessoa` (feito nesta rodada).
    - Dia de recebimento padrão: hoje é o dia da fatura. Decidir se passa a usar o padrão de Configurações.
-   - Recorrentes de cartão não aplicam o ajuste de fim de semana das faturas. Decidir.
-   - Recorrentes já cadastradas com cartão mantêm o dia antigo até serem editadas.
+   - ~~Recorrentes de cartão não aplicam o ajuste de fim de semana.~~ Resolvido na 2026.11.1.
+   - Recorrentes já cadastradas com cartão mantêm o dia antigo até serem editadas. Lançamentos já gerados também mantêm a data antiga.
    - Lacunas de teste: não há testes HTTP para os POSTs de cartões, importação e investimentos. Não há teste para `soma_categoria_periodo`.
 
 ## 7. Aguardando decisão do usuário

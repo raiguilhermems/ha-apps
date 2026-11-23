@@ -1,4 +1,5 @@
 from sqlmodel import select
+from datetime import date
 
 from app.models import Transaction
 from app.services.parcelados import (
@@ -7,7 +8,8 @@ from app.services.parcelados import (
     schedule_summaries,
     update_plan,
 )
-from app.services.util import current_month
+from app.services.util import add_months, current_month, due_in_month
+from app.services.parcelados import desconto_antecipacao
 
 
 def _parcelas(session, plan_id):
@@ -44,3 +46,29 @@ def test_editar_nao_mexe_nas_pagas(session):
     pendente = parcelas[1]
     assert pendente.amount_cents == 20000
     assert pendente.due_date.day == 15
+
+def test_desconto_zero_sem_parcelas_futuras():
+    assert desconto_antecipacao([(date(2026, 11, 1), 10000)], date(2026, 11, 23), 10.58) == 0
+
+def test_desconto_uma_parcela_em_um_ano():
+    # 1000 / 1,1058 ≈ 904,32 → desconto ≈ 95,68
+    valor = 100000
+    d = desconto_antecipacao([(date(2027, 11, 23), valor)], date(2026, 11, 23), 10.58)
+    assert abs(d - 9568) <= 2
+
+
+def test_desconto_so_conta_parcelas_de_meses_futuros(session):
+    base = current_month()
+    create_plan(session, "Teste desconto", "boleto", "", 10000, 3, 1, base, 10)
+    session.commit()
+    resumo = schedule_summaries(session)["plans"][0]
+    # Parcela 1 é do mês atual (aberta, fora do desconto); parcelas 2 e 3 são futuras.
+    futuras = [(due_in_month(add_months(base, k), 10), 10000) for k in (1, 2)]
+    assert resumo["desconto"] == desconto_antecipacao(futuras, date.today(), 10.58)
+    assert resumo["desconto"] > 0
+
+
+def test_desconto_zero_quando_so_ha_parcela_do_mes_atual(session):
+    create_plan(session, "Teste desconto", "boleto", "", 10000, 1, 1, current_month(), 10)
+    session.commit()
+    assert schedule_summaries(session)["plans"][0]["desconto"] == 0

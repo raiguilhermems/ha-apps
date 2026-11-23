@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from sqlmodel import Session, SQLModel
 
 from app.db import DB_PATH, engine, get_session, init_db
-from app.services.settings import get_int_setting, get_setting, set_setting
+from app.services.settings import get_int_setting, get_setting, set_setting, get_taxa_desconto
 from app.web import RedirectResponse, templates
 
 router = APIRouter()
@@ -59,6 +59,7 @@ def configuracoes_page(
             "dia_padrao": int(get_setting(session, "dia_padrao")),
             "grafico_antes": get_int_setting(session, "grafico_antes", 1, 24),
             "grafico_depois": get_int_setting(session, "grafico_depois", 0, 12),
+            "taxa_desconto": f"{get_taxa_desconto(session):.2f}".replace(".", ","),
         },
     )
 
@@ -120,3 +121,14 @@ def salvar_grafico(antes: int = Form(...), depois: int = Form(...), session: Ses
     set_setting(session, "grafico_antes", str(antes))
     set_setting(session, "grafico_depois", str(depois))
     return RedirectResponse("/configuracoes?ok=grafico", status_code=303)
+
+@router.post("/configuracoes/taxa")
+def salvar_taxa(taxa: str = Form(...), session: Session = Depends(get_session)):
+    try:
+        valor = float(taxa.strip().replace(",", "."))
+    except ValueError:
+        return RedirectResponse("/configuracoes?erro=taxa", status_code=303)
+    if not 0 <= valor <= 100:
+        return RedirectResponse("/configuracoes?erro=taxa", status_code=303)
+    set_setting(session, "taxa_desconto", f"{valor:.2f}")
+    return RedirectResponse("/configuracoes?ok=taxa", status_code=303)

@@ -18,12 +18,14 @@
     'arquivo': 'O arquivo escolhido não é um banco válido. Nada foi importado.',
     'grafico': 'Antes: de 1 a 24 meses. Depois: de 0 a 12 meses. Nada foi salvo.',
     'dia': 'Use 1º dia útil ou um dia de 1 a 31. Nada foi salvo.',
+    'taxa': 'A taxa deve estar entre 0 e 100%. Nada foi salvo.',
   } %}
   {% if erro %}{{ m.erro(msgs.get(erro, erro)) }}{% endif %}
   {% if ok == 'dia' %}{{ m.sucesso('Vencimento padrão salvo.') }}{% endif %}
   {% if ok == 'grafico' %}{{ m.sucesso('Configuração do gráfico salva.') }}{% endif %}
   {% if ok == 'importado' %}{{ m.sucesso('Backup importado. O banco anterior ficou guardado como finance-antes-da-importacao.db.') }}{% endif %}
   {% if ok == 'apagado' %}{{ m.sucesso('Todos os dados foram apagados.') }}{% endif %}
+  {% if ok == 'taxa' %}{{ m.sucesso('Taxa de desconto salva.') }}{% endif %}
 
   <h2>Vencimento padrão</h2>
   <div class="panel">
@@ -48,6 +50,14 @@
     </form>
     <p class="aviso">Define quantos meses aparecem antes e depois do mês de referência no gráfico do Início.</p>
   </div>
+  <h2>Desconto por antecipação</h2>
+<div class="panel">
+  <form class="grid" style="--cols: 3" method="post" action="{{ base() }}/configuracoes/taxa">
+    <label>Taxa anual (%)<input name="taxa" value="{{ taxa_desconto }}" required></label>
+    <button type="submit" class="primary">Salvar</button>
+  </form>
+  <p class="aviso">Usada para estimar quanto você economiza ao quitar parcelas antes do vencimento. Padrão: 10,58% ao ano.</p>
+</div>
 
   <h2>Backup</h2>
   <div class="panel">

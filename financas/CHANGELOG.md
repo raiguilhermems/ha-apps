@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026.11.1 — 23/11/2026
+
+- Parcelados: cada compra a pagar mostra o desconto estimado para quitar de uma vez as parcelas futuras. A parcela do mês atual não entra, porque já está em aberto.
+- Configurações: nova seção **Desconto por antecipação**, com a taxa anual usada no cálculo (padrão 10,58% ao ano, efetiva).
+- Pessoas aparecem com a primeira letra maiúscula. Categorias e recorrentes aparecem em minúsculas.
+- Recorrentes de cartão: se o dia de pagamento cair em fim de semana, o lançamento passa para o próximo dia útil, como na fatura. Lançamentos já criados mantêm a data antiga.
+
 ## 2026.11.0 — 21/11/2026
 
 - Novo nome: **FinHome**, com ícone próprio na loja de add-ons, na barra lateral e no topo de cada tela.

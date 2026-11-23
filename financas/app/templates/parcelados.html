@@ -26,7 +26,7 @@
         {% for c in plan.categorias %}{{ m.cat_pill(c.id, c.nome, c.kind) }}{% endfor %}
         {% if plan.concluido %}<span class="pill ok">Concluído</span>{% endif %}
       </p>
-      <p class="aviso">{{ plan.pagas }} de {{ plan.total }} {{ 'recebidas' if receber else 'pagas' }} · restam {{ plan.restantes }} · saldo {{ plan.saldo | brl }}</p>
+      <p class="aviso">{{ plan.pagas }} de {{ plan.total }} {{ 'recebidas' if receber else 'pagas' }} · restam {{ plan.restantes }} · saldo {{ plan.saldo | brl }}{% if not receber and plan.desconto > 0 %} · desconto estimado ao quitar antecipado: <strong class="ok">{{ plan.desconto | brl }}</strong>{% endif %}</p>
       <table>
         <thead><tr><th>Parcela</th><th>Mês</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
         <tbody>

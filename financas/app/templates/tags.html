@@ -42,7 +42,7 @@
       <tbody>
       {% for t in pessoas %}
       <tr>
-        <td class="desc">{{ t.name | lower }}</td>
+        <td class="desc">{{ t.name | pessoa }}</td>
         <td class="col-estreita">
           <div class="acoes">
             <a class="btn icon" href="{{ base() }}/categorias/{{ t.id }}" title="Ver lançamentos" aria-label="Ver lançamentos">{{ m.icone('ver') }}</a>
@@ -93,7 +93,7 @@
       <tbody>
       {% for t in categorias %}
       <tr>
-        <td class="desc">{{ t.name }}</td>
+        <td class="desc">{{ t.name | lower }}</td>
         <td class="col-estreita">{% if t.excludes_from_total %}<span class="pill">não soma</span>{% else %}<span class="pill ok">soma</span>{% endif %}</td>
         <td class="col-estreita">
           <div class="acoes">

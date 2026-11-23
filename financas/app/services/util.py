@@ -56,3 +56,18 @@ def mes_curto(ref: str) -> str:
     """'2026-02' -> 'fev/2026'."""
     y, m = ref.split("-")
     return f"{MESES[int(m) - 1]}/{y}"
+
+
+PARTICULAS = {"de", "da", "do", "das", "dos", "e"}
+
+
+def nome_proprio(texto: str) -> str:
+    """'ana lima' -> 'Ana Lima'; 'joão da silva' -> 'João da Silva'. Partículas ficam minúsculas."""
+    palavras = []
+    for i, p in enumerate(texto.split()):
+        low = p.lower()
+        if i > 0 and low in PARTICULAS:
+            palavras.append(low)
+        else:
+            palavras.append(low[:1].upper() + low[1:])
+    return " ".join(palavras)
