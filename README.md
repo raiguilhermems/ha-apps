@@ -9,7 +9,7 @@ Controle financeiro pessoal para o Home Assistant. Roda como add-on, guarda os d
 - Parcelados de cartão, boleto, carnê ou financiamento
 - Estimativa de desconto para quitar parcelas antes do vencimento, com taxa configurável
 - Importação da fatura do Nubank (CSV), com prévia antes de gravar
-- Cartões com dia de pagamento
+- Cartões com vencimento e fechamento da fatura, com lançamento da fatura e quitação das parcelas do cartão
 - Categorias com relatório mensal
 - Investimentos com histórico e gráfico de evolução
 - Backup e importação do banco pela própria interface
@@ -80,6 +80,8 @@ FINANCAS_DB=./demo.db uv run uvicorn app.main:app --port 8001
 
 Os arquivos de fatura fictícia para testar a importação estão em `financas/scripts/demo/`.
 
+Para gerar as capturas de tela da pasta `docs/`, veja o cabeçalho de `financas/scripts/capturar_telas.py`.
+
 ## Estrutura
 
 ```
@@ -99,4 +101,5 @@ O banco fica em `/data/finance.db` dentro do add-on e não é criptografado. Bac
 ## Documentação
 
 - [Guia de uso](financas/DOCS.md)
+- [Como evitar duplicados](financas/DOCS.md#como-evitar-duplicados)
 - [Changelog](financas/CHANGELOG.md)
