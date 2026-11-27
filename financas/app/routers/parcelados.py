@@ -14,6 +14,7 @@ from app.services.parcelados import (
     create_plan,
     delete_plan,
     generate_installments,
+    quitar_parcelamento,
     schedule_summaries,
     update_plan,
 )
@@ -195,3 +196,13 @@ def editar_parcelado(
         return _erro(str(e), destino)
     session.commit()
     return RedirectResponse("/parcelados?ok=editado", status_code=303)
+
+
+@router.post("/parcelados/{plan_id}/quitar")
+def quitar_parcelado(plan_id: int, session: Session = Depends(get_session)):
+    plan = session.get(InstallmentPlan, plan_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail="Parcelamento não encontrado")
+    quitar_parcelamento(session, plan)
+    session.commit()
+    return RedirectResponse("/parcelados?ok=quitado", status_code=303)

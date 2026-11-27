@@ -1,5 +1,5 @@
 name: FinHome
-version: "2026.11.1"
+version: "2026.11.2"
 slug: finhome
 description: Controle financeiro pessoal local com gestão de receitas, despesas, parcelados, importação de fatura Nubank, cartões e investimentos.
 arch:

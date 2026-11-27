@@ -26,7 +26,6 @@
           <option value="receita" {{ 'selected' if tx.kind == 'receita' }}>Receita</option>
         </select>
       </label>
-      <label>Terceiros (R$, só despesa)<input name="third_party" value="{{ third_text }}" placeholder="0,00"></label>
       <label class="span3">Categorias (separadas por vírgula)<input name="tags" value="{{ tags_text }}" placeholder="mercado, lazer"></label>
       <button type="submit" class="primary">Salvar</button>
     </form>

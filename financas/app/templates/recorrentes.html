@@ -41,8 +41,8 @@
           {% for c in cards %}<option value="{{ c.name }}" data-dia="{{ c.dia_pagamento or '' }}"{% if c.name == card_name %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
         </select>
       </label>
-      <label class="span4">Categorias (separadas por vírgula)<input name="categorias" placeholder="mercado, lazer"></label>
-      <label class="check"><input type="checkbox" name="variable"> Valor variável (ex.: luz)</label>
+      <label class="span3">Categorias (separadas por vírgula)<input name="categorias" placeholder="mercado, lazer"></label>
+      <label class="check span2"><input type="checkbox" name="variable"> Valor variável (ex.: luz)</label>
       <button type="submit" class="primary">Adicionar</button>
     </form>
     <p class="aviso" data-venc-aviso></p>
@@ -133,7 +133,7 @@ function toggleCartao(sel) {
   if (!isDespesa) cartao.value = '';
   const dia = isDespesa && cartao.value ? cartao.selectedOptions[0].dataset.dia : '';
   boxVenc.style.display = dia ? 'none' : '';
-  aviso.textContent = dia ? `Vencimento: dia ${dia}, o dia de pagamento do cartão.` : '';
+  aviso.textContent = dia ? `Vencimento: dia ${dia}, o dia de vencimento do cartão.` : '';
 }
 document.querySelectorAll('select[name="kind"]').forEach(toggleCartao);
 </script>

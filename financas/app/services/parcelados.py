@@ -11,6 +11,7 @@ from datetime import date
 from sqlmodel import Session, select
 
 from app.models import Account, InstallmentPlan, Tag, Transaction, TransactionTag
+from app.services.cartoes import fechamento_fatura, renomear_pessoa_nas_faturas
 from app.services.recurring import get_or_create_card
 from app.services.tags import PESSOA, parse_tags, reservar_categoria, set_tags
 from app.services.util import add_months, current_month, due_in_month
@@ -81,6 +82,7 @@ def renomear_pessoa(session: Session, tag: Tag, nome_novo: str) -> None:
         # Tira o nome antigo das categorias do plano; update_plan põe o novo no lugar
         categorias = ", ".join(n for n in parse_tags(plan.tags_text) if n != antigo)
         update_plan(session, plan, plan.description, plan.installment_cents, plan.due_day, categorias)
+    renomear_pessoa_nas_faturas(session, antigo, novo)
 
 
 def _tags_do_plano(tipo: str, pessoa: str, categorias: str) -> list[str]:
@@ -167,6 +169,7 @@ def generate_installments(session: Session, months_ahead: int = 12) -> int:
                         amount_cents=plan.installment_cents,
                         due_date=due_in_month(m, plan.due_day),
                         kind="receita" if receber else "despesa",
+                        reembolso=receber,
                         account_id=plan.account_id,
                         installment_plan_id=plan.id,
                         installment_n=n,
@@ -182,6 +185,27 @@ def generate_installments(session: Session, months_ahead: int = 12) -> int:
 
     session.commit()
     return created
+
+
+def mes_da_fatura_aberta(session: Session, plan: InstallmentPlan, rows: list[dict], hoje: date) -> str | None:
+    """Mês da parcela que cai na fatura do cartão que ainda está em aberto (fechamento não passou).
+
+    Só vale para compras no cartão com vencimento e fechamento cadastrados. Essa parcela é
+    paga pela fatura atual, então não é antecipável.
+    """
+    if not plan.account_id:
+        return None
+    cartao = session.get(Account, plan.account_id)
+    if cartao is None or not cartao.dia_pagamento or not cartao.dia_fechamento:
+        return None
+    abertas = []
+    for r in rows:
+        if r["status"] != "pendente":
+            continue
+        fecha = fechamento_fatura(r["mes"], cartao.dia_fechamento, cartao.dia_pagamento)
+        if fecha >= hoje:
+            abertas.append((fecha, r["mes"]))
+    return min(abertas)[1] if abertas else None
 
 
 def schedule_summaries(session: Session) -> dict:
@@ -241,10 +265,12 @@ def schedule_summaries(session: Session) -> dict:
         # Desconto estimado só para parcelas futuras (meses após o atual) ainda não pagas.
         # A parcela do mês corrente está aberta e não pode ser antecipada.
         desconto = 0
-        if not receber:
+        if not receber and p.account_id:  # desconto só existe em compra no cartão
+            # A parcela que já está na fatura aberta do cartão não tem desconto
+            aberta = mes_da_fatura_aberta(session, p, rows, today)
             desconto = desconto_antecipacao(
                 [(r["vencimento"], r["valor"]) for r in rows
-                 if r["status"] == "pendente" and r["mes"] > base],
+                 if r["status"] == "pendente" and r["mes"] > base and r["mes"] != aberta],
                 today,
                 taxa,
             )
@@ -382,6 +408,51 @@ def delete_plan(session: Session, plan: InstallmentPlan) -> None:
             session.add(t)
     session.flush()
     session.delete(plan)
+
+
+def quitar_parcelamento(session: Session, plan: InstallmentPlan) -> int:
+    """Marca todas as parcelas que faltam como pagas (ou recebidas), sem esperar o vencimento.
+
+    Usado quando você já pagou o restante (ex.: adiantou parcelas). Cria as parcelas que ainda
+    não existem a partir do mês atual. Parcelas de meses anteriores ao atual já contam como
+    pagas, então não são criadas. Devolve quantas parcelas foram quitadas agora.
+    """
+    base = current_month()
+    hoje = date.today()
+    receber = plan.tipo == "receber"
+    inicio = plan.parcela_inicial if receber else 1
+    existentes = {
+        t.installment_n: t
+        for t in session.exec(select(Transaction).where(Transaction.installment_plan_id == plan.id)).all()
+    }
+    quitadas = 0
+    for n in range(inicio, plan.installments_total + 1):
+        m = add_months(plan.first_due_month, n - 1)
+        tx = existentes.get(n)
+        if tx is None:
+            if m < base:
+                continue
+            tx = Transaction(
+                description=_descricao(plan, n),
+                amount_cents=plan.installment_cents,
+                due_date=due_in_month(m, plan.due_day),
+                kind="receita" if receber else "despesa",
+                reembolso=receber,
+                account_id=plan.account_id,
+                installment_plan_id=plan.id,
+                installment_n=n,
+                status="pendente",
+            )
+            session.add(tx)
+            session.flush()
+            set_tags(session, tx, parse_tags(plan.tags_text))
+        if tx.status != "pago":
+            tx.status = "pago"
+            tx.paid_date = hoje
+            session.add(tx)
+            quitadas += 1
+    session.flush()
+    return quitadas
 
 
 def desconto_antecipacao(parcelas: list[tuple[date, int]], hoje: date, taxa_pct: float) -> int:

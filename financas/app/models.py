@@ -3,6 +3,7 @@
 from datetime import date
 from typing import Optional
 
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -10,7 +11,8 @@ class Account(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     type: str  # conta | cartao | investimento
-    dia_pagamento: Optional[int] = None  # cartões: dia do pagamento da fatura
+    dia_pagamento: Optional[int] = None  # cartões: dia de vencimento da fatura
+    dia_fechamento: Optional[int] = None  # cartões: dia em que a fatura fecha
 
 
 class Tag(SQLModel, table=True):
@@ -74,6 +76,47 @@ class Transaction(SQLModel, table=True):
     status: str = "pendente"  # pendente | pago
     paid_date: Optional[date] = None
     import_hash: Optional[str] = Field(default=None, unique=True)
+    reembolso: bool = False  # a receber de terceiro: não conta como receita
+    fatura_id: Optional[int] = None  # fatura do cartão de onde veio este reembolso
+
+
+class FaturaCartao(SQLModel, table=True):
+    """Fatura de um cartão em um mês. Gera a despesa (e a receita de terceiro) no Início."""
+
+    __tablename__ = "fatura_cartao"
+    __table_args__ = (UniqueConstraint("account_id", "referencia"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    account_id: int = Field(foreign_key="account.id")
+    referencia: str  # AAAA-MM, mês do vencimento da fatura
+    total_cents: int
+    terceiro_cents: int = 0  # parte paga por outra pessoa, que vai devolver
+    pessoa: str = ""  # quem pagou por terceiro (um nome)
+    tx_despesa_id: int = Field(foreign_key="transacao.id")  # despesa da fatura no Início
+    tx_receita_id: Optional[int] = Field(default=None, foreign_key="transacao.id")  # legado: use fatura_id
+    liquido_cents: int = 0  # total menos o que é de terceiro: sua parte, lançada no Início
+
+
+class FaturaItem(SQLModel, table=True):
+    """Compra da fatura registrada para conferência: à vista (vencimento) ou parcela de um parcelado.
+
+    Destino "terceiro" tira o valor da sua despesa. Compras à vista de terceiro geram um reembolso
+    (a receber) no vencimento da fatura; parcelados de terceiro seguem o cronograma do plano.
+    """
+
+    __tablename__ = "fatura_item"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    fatura_id: int = Field(foreign_key="fatura_cartao.id")
+    kind: str = "vencimento"  # vencimento (à vista) | parcelado | manual (terceiro lançado à mão)
+    descricao: str = ""
+    valor_cents: int = 0
+    destino: str = "sua"  # sua | terceiro
+    pessoa: str = ""  # nome normalizado de quem vai devolver (só se destino terceiro)
+    categorias: str = ""  # só para registro
+    plan_id: Optional[int] = Field(default=None, foreign_key="installment_plan.id")
+    data_compra: Optional[date] = None
+    nome_original: str = ""  # título como veio no CSV (reconhece duplicidades)
 
 
 class TransactionTag(SQLModel, table=True):

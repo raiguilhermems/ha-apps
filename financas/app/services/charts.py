@@ -54,7 +54,7 @@ def categoria_mensal(session: Session, tag_id: int, ref: str, antes: int = 6, de
         start, end = month_bounds(m)
         r = d = 0
         for t in transactions_with_tag(session, tag_id, start, end):
-            if t.kind == "receita":
+            if t.kind == "receita" and not t.reembolso:
                 r += t.amount_cents
             elif t.kind == "despesa":
                 d += t.amount_cents
@@ -76,7 +76,7 @@ def soma_categoria_periodo(session: Session, tag_id: int, ref: str, meses: int =
     for i in range(meses):
         start, end = month_bounds(add_months(mes_inicio, i))
         for t in transactions_with_tag(session, tag_id, start, end):
-            if t.kind == "receita":
+            if t.kind == "receita" and not t.reembolso:
                 receitas += t.amount_cents
             elif t.kind == "despesa":
                 despesas += t.amount_cents

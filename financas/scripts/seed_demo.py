@@ -1,5 +1,7 @@
 """Gera um banco de demonstração com dados fictícios, para as capturas de tela do README.
 
+Inclui faturas de cartão (uma com pago por terceiro), parcelados a pagar e a receber e recorrentes.
+
 Uso, a partir da pasta financas/:
     FINANCAS_DB=./demo.db uv run python scripts/seed_demo.py
 
@@ -23,7 +25,13 @@ from sqlmodel import Session, SQLModel, select  # noqa: E402
 
 from app.db import engine, init_db  # noqa: E402
 from app.models import RecurringRule, Transaction  # noqa: E402
-from app.services.cartoes import buscar_por_nome, criar as criar_cartao  # noqa: E402
+from app.services.cartoes import (  # noqa: E402
+    alternar_pagamento,
+    buscar_fatura,
+    buscar_por_nome,
+    criar as criar_cartao,
+    lancar_fatura,
+)
 from app.services.parcelados import create_plan, generate_installments  # noqa: E402
 from app.services.recurring import create_rule, generate_all, set_active  # noqa: E402
 from app.services.tags import parse_tags, set_tags  # noqa: E402
@@ -36,7 +44,7 @@ def dia(mes: str, d: int) -> date:
     return date(int(mes[:4]), int(mes[5:7]), d)
 
 
-def avulso(s, descricao, valor, due, kind="despesa", status="pendente", categorias="", terceiro=None):
+def avulso(s, descricao, valor, due, kind="despesa", status="pendente", categorias=""):
     tx = Transaction(
         description=descricao,
         amount_cents=valor,
@@ -44,7 +52,6 @@ def avulso(s, descricao, valor, due, kind="despesa", status="pendente", categori
         kind=kind,
         status=status,
         paid_date=due if status == "pago" else None,
-        third_party_cents=terceiro,
     )
     s.add(tx)
     s.flush()
@@ -57,9 +64,9 @@ def main():
     ref = current_month()
 
     with Session(engine) as s:
-        # cartões: o dia de pagamento aparece na tela Cartões
-        criar_cartao(s, "Nubank", 10)
-        criar_cartao(s, "Itaú", 5)
+        # cartões: vencimento e fechamento da fatura aparecem na tela Cartões
+        criar_cartao(s, "Nubank", 10, 3)
+        criar_cartao(s, "Itaú", 5, 25)
         s.commit()
 
         # recorrentes (receitas e despesas, algumas com categoria própria)
@@ -111,7 +118,22 @@ def main():
             if i in (-4, -1):
                 avulso(s, "Freelance", 120000, dia(m, 15), kind="receita", status="pago" if pago else "pendente")
             if i == -2:
-                avulso(s, "Jantar com amigos", 24000, dia(m, 9), status="pago", categorias="lazer, terceiro", terceiro=9000)
+                avulso(s, "Jantar com amigos", 24000, dia(m, 9), status="pago", categorias="lazer")
+        s.commit()
+
+        # faturas dos cartões: o total é lançado em Cartões e a despesa vai para o Início sozinha
+        nubank = buscar_por_nome(s, "Nubank")
+        itau = buscar_por_nome(s, "Itaú")
+        lancar_fatura(s, nubank, add_months(ref, -2), 186000, 0)
+        lancar_fatura(s, nubank, add_months(ref, -1), 172000, 0)
+        lancar_fatura(s, nubank, ref, 194500, 0)
+        # cartão adicional usado pela Carla: a parte dela entra como pago por terceiro
+        lancar_fatura(s, itau, ref, 98000, 30000, "Carla Souza")
+        s.commit()
+        # as faturas dos meses passados já foram pagas, e quitaram as parcelas do cartão
+        for i in (-2, -1):
+            fatura = buscar_fatura(s, nubank.id, add_months(ref, i))
+            alternar_pagamento(s, s.get(Transaction, fatura.tx_despesa_id))
         s.commit()
 
         # no mês atual, algumas recorrentes já foram pagas

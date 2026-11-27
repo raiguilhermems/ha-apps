@@ -16,6 +16,12 @@
     --bad-bg: rgba(248, 113, 113, .08);
     --ok-line: rgba(52, 211, 153, .4);
     --bad-line: rgba(248, 113, 113, .4);
+    --warn: #fbbf24;
+    --info: #60a5fa;
+    --warn-line: rgba(251, 191, 36, .45);
+    --info-line: rgba(96, 165, 250, .45);
+    --reembolso: #fb923c;
+    --reembolso-line: rgba(251, 146, 60, .45);
   }
   * { box-sizing: border-box; }
   body {
@@ -115,6 +121,10 @@
   }
   .pill.ok { color: var(--ok); border-color: var(--ok-line); }
   .pill.bad { color: var(--bad); border-color: var(--bad-line); }
+  .pill.aberta { color: var(--info); border-color: var(--info-line); }
+  .pill.fechada { color: var(--warn); border-color: var(--warn-line); }
+  .pill.sem { color: var(--muted); }
+  .pill.reembolso { color: var(--reembolso); border-color: var(--reembolso-line); }
   a.pill:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
   .celula-valor { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; }
   .celula-valor .pill { margin: 0; }
@@ -137,6 +147,9 @@
   /* Faixa colorida à esquerda: verde para receita, vermelho para despesa */
   tr.linha-receita td:first-child { box-shadow: inset 4px 0 0 var(--ok); }
   tr.linha-despesa td:first-child { box-shadow: inset 4px 0 0 var(--bad); }
+  tr.linha-reembolso td:first-child { box-shadow: inset 4px 0 0 var(--reembolso); }
+  tr.grupo-reembolso td { color: var(--reembolso); }
+  .card .val.reembolso { color: var(--reembolso); }
   /* Colunas estreitas ocupam só o espaço do conteúdo */
   th.col-estreita, td.col-estreita { width: 1%; white-space: nowrap; }
   /* Status com a mesma largura em todas as tabelas */
@@ -213,7 +226,7 @@
 
   /* Planos de parcelamento: faixa colorida pela direção do dinheiro */
   .panel.plano-pagar { border-left: 4px solid var(--bad); }
-  .panel.plano-receber { border-left: 4px solid var(--ok); }
+  .panel.plano-receber { border-left: 4px solid var(--reembolso); }
   .plano-titulo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
   .plano-titulo h3 { margin: .25rem 0; }
 

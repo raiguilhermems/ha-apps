@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.services.util import add_months, current_month, fmt_brl, mes_curto, nome_proprio
 
-APP_VERSION = "2026.11.1"
+APP_VERSION = "2026.11.2"
 
 _prefixo: ContextVar[str] = ContextVar("prefixo", default="")
 

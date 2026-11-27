@@ -10,9 +10,10 @@ from sqlmodel import Session, select
 from app.db import get_session
 from app.models import Account, Tag
 from app.services.cartoes import buscar_por_nome, criar, listar, validar_novo, vencimento_fatura
-from app.services.fatura_nubank import LinhaFatura, ler_fatura, limpa_nome
-from app.services.importacao import gravar, montar_previa, sem_pessoa
+from app.services.fatura_nubank import LinhaFatura, ler_fatura_completa, limpa_nome
+from app.services.importacao import diferenca_total, gravar, montar_previa, sem_pessoa
 from app.services.tags import validar_categorias_livres
+from app.services.util import parse_brl
 from app.web import RedirectResponse, templates
 
 router = APIRouter()
@@ -73,16 +74,25 @@ async def importar_previa(
     novo_dia: str = Form(""),
     mes_num: str = Form(...),
     ano: str = Form(...),
+    total: str = Form(""),
     session: Session = Depends(get_session),
 ):
     try:
-        linhas: list[LinhaFatura] = ler_fatura(await arquivo.read())
+        linhas: list[LinhaFatura] = ler_fatura_completa(await arquivo.read())
     except (ValueError, csv.Error):
         return _volta("Não consegui ler este arquivo. Confira se é o CSV da fatura do Nubank.")
     if not linhas:
-        return _volta("Nenhuma compra parcelada encontrada neste arquivo.")
+        return _volta("Nenhuma compra encontrada neste arquivo.")
 
     try:
+        if not total.strip():
+            raise ValueError("Informe o total da fatura, como vem no fim dela")
+        try:
+            total_cents = parse_brl(total)
+        except ValueError:
+            raise ValueError("Total da fatura inválido. Use o formato 1.234,56")
+        if total_cents <= 0:
+            raise ValueError("O total da fatura deve ser maior que zero")
         mes = f"{int(ano):04d}-{int(mes_num):02d}"
         nome_cartao, dia_pagamento = _escolher_cartao(session, cartao_id, novo_nome, novo_dia)
         vencimento = vencimento_fatura(mes, dia_pagamento)
@@ -91,13 +101,25 @@ async def importar_previa(
         return _volta(str(e))
 
     previa = montar_previa(session, linhas, nome_cartao)
+    for n, r in enumerate(previa):
+        r["i"] = n
     pessoas = [t.name for t in session.exec(select(Tag).where(Tag.kind == "pessoa").order_by(Tag.name)).all()]
     # Cartão novo só é gravado na confirmação; o dia vai junto para criá-lo lá.
     dia_novo = dia_pagamento if not cartao_id.strip() else None
+    soma_csv = sum(l.valor_cents for l in linhas)
     return templates.TemplateResponse(
         request,
         "previa_fatura.html",
-        {"previa": previa, "cartao": nome_cartao, "vencimento": vencimento, "dia_novo": dia_novo, "pessoas": pessoas},
+        {
+            "previa": previa,
+            "cartao": nome_cartao,
+            "vencimento": vencimento,
+            "dia_novo": dia_novo,
+            "pessoas": pessoas,
+            "total_cents": total_cents,
+            "soma_csv": soma_csv,
+            "diferenca": diferenca_total(linhas, total_cents),
+        },
     )
 
 
@@ -108,6 +130,7 @@ async def importar_confirmar(request: Request, session: Session = Depends(get_se
     if not cartao:
         return _volta("Cartão não informado")
     vencimento = date.fromisoformat(str(form["vencimento"]))
+    total_cents = int(str(form["total_fatura"]))
 
     itens = []
     for i in form.getlist("indices"):
@@ -117,9 +140,10 @@ async def importar_confirmar(request: Request, session: Session = Depends(get_se
             data=date.fromisoformat(str(form[f"data_{i}"])),
             nome_original=original,
             nome=limpa_nome(original),
-            parcela=int(str(form[f"n_{i}"])),
-            total=int(str(form[f"total_{i}"])),
+            parcela=int(str(form.get(f"n_{i}", "0") or 0)),
+            total=int(str(form.get(f"total_{i}", "0") or 0)),
             valor_cents=int(str(form[f"valor_{i}"])),
+            parcelado=str(form.get(f"tipo_{i}", "parcelado")) == "parcelado",
         )
         terceiro = f"terceiro_{i}" in form
         itens.append(
@@ -158,11 +182,8 @@ async def importar_confirmar(request: Request, session: Session = Depends(get_se
         session.commit()
 
     try:
-        resultado = gravar(session, cartao, vencimento, itens)
+        gravar(session, cartao, vencimento, itens, total_cents=total_cents)
     except ValueError as e:
         session.rollback()
         return _volta(str(e))
-    return RedirectResponse(
-        f"/parcelados?criadas={resultado['criadas']}&atualizadas={resultado['atualizadas']}",
-        status_code=303,
-    )
+    return RedirectResponse(f"/cartoes?mes={vencimento.strftime('%Y-%m')}&ok=importada", status_code=303)

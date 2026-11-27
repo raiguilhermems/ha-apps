@@ -14,6 +14,11 @@
       <div class="plano-titulo">
         <h3>{{ plan.descricao }}</h3>
         <div class="acoes esq">
+          {% if not plan.concluido %}
+          <form class="inline" method="post" action="{{ base() }}/parcelados/{{ plan.id }}/quitar" onsubmit="return confirm('Quitar este parcelamento? Todas as parcelas que faltam serão marcadas como pagas ou recebidas.')">
+            <button type="submit" class="primary">Quitar</button>
+          </form>
+          {% endif %}
           <a class="btn icon" href="{{ base() }}/parcelados/{{ plan.id }}/editar" title="Editar" aria-label="Editar">{{ m.icone('editar') }}</a>
           <form class="inline" method="post" action="{{ base() }}/parcelados/{{ plan.id }}/excluir" onsubmit="return confirm('Excluir este parcelamento? As parcelas pendentes serão apagadas.')">
             <button type="submit" class="icon danger" title="Excluir" aria-label="Excluir">{{ m.icone('excluir') }}</button>
@@ -21,7 +26,7 @@
         </div>
       </div>
       <p>
-        {% if receber and plan.pessoa_tag_id %}<a class="pill" href="{{ base() }}/categorias/{{ plan.pessoa_tag_id }}">{{ plan.forma_label }}</a>{% else %}<span class="pill">{{ plan.forma_label }}</span>{% endif %}
+        {% if receber and plan.pessoa_tag_id %}<a class="pill reembolso" href="{{ base() }}/categorias/{{ plan.pessoa_tag_id }}">{{ plan.forma_label }}</a>{% else %}<span class="pill{{ ' reembolso' if receber }}">{{ plan.forma_label }}</span>{% endif %}
         <span class="pill">{{ plan.parcela | brl }} por mês</span>
         {% for c in plan.categorias %}{{ m.cat_pill(c.id, c.nome, c.kind) }}{% endfor %}
         {% if plan.concluido %}<span class="pill ok">Concluído</span>{% endif %}
@@ -40,7 +45,7 @@
             {% if r.status == 'pago' %}<span class="pill ok">{{ 'Recebido' if receber else 'Pago' }}</span>
             {% elif r.status == 'atrasada' %}<span class="pill bad">Atrasado</span>
             {% elif r.status == 'passada' %}<span class="pill">Anterior</span>
-            {% else %}<span class="pill">{{ 'A receber' if receber else 'Pendente' }}</span>{% endif %}
+            {% else %}<span class="pill{{ ' reembolso' if receber }}">{{ 'A receber' if receber else 'Pendente' }}</span>{% endif %}
           </td>
           <td class="col-estreita">
             {% if r.tx_id %}
@@ -74,10 +79,11 @@
     {{ m.sucesso('Importação concluída: ' ~ criadas ~ ' compra(s) criada(s) e ' ~ atualizadas ~ ' atualizada(s).') }}
   {% endif %}
   {% if ok == 'editado' %}{{ m.sucesso('Parcelamento atualizado.') }}{% endif %}
+  {% if ok == 'quitado' %}{{ m.sucesso('Parcelamento quitado.') }}{% endif %}
 
   <section class="cards">
     <div class="card"><small>Saldo a pagar</small><div class="val bad">{{ saldo_total | brl }}</div></div>
-    <div class="card"><small>Saldo a receber</small><div class="val ok">{{ saldo_receber | brl }}</div></div>
+    <div class="card"><small>Saldo a receber</small><div class="val reembolso">{{ saldo_receber | brl }}</div></div>
     <div class="card"><small>Parcelamentos ativos</small><div class="val">{{ (plans_pagar + plans_receber) | rejectattr('concluido') | list | length }}</div></div>
   </section>
 

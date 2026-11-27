@@ -58,7 +58,7 @@ function toggleCartao(sel) {
   if (!isDespesa) cartao.value = '';
   const dia = isDespesa && cartao.value ? cartao.selectedOptions[0].dataset.dia : '';
   boxVenc.style.display = dia ? 'none' : '';
-  aviso.textContent = dia ? `Vencimento: dia ${dia}, o dia de pagamento do cartão.` : '';
+  aviso.textContent = dia ? `Vencimento: dia ${dia}, o dia de vencimento do cartão.` : '';
 }
 document.querySelectorAll('select[name="kind"]').forEach(toggleCartao);
 </script>

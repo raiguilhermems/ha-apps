@@ -1,7 +1,7 @@
 from sqlmodel import select
 from datetime import date
 
-from app.models import Transaction
+from app.models import Account, Transaction
 from app.services.parcelados import (
     create_plan,
     generate_installments,
@@ -58,13 +58,17 @@ def test_desconto_uma_parcela_em_um_ano():
 
 
 def test_desconto_so_conta_parcelas_de_meses_futuros(session):
+    # Desconto só existe em compra no cartão. Cartão fecha dia 3: a parcela 2 (dezembro) cai
+    # na fatura aberta e não é antecipável; a parcela 1 é do mês atual. Só a 3 (janeiro) conta.
+    # Válido enquanto hoje for antes de 3 de dezembro de 2026.
     base = current_month()
-    create_plan(session, "Teste desconto", "boleto", "", 10000, 3, 1, base, 10)
+    session.add(Account(name="Teste cartao", type="cartao", dia_pagamento=10, dia_fechamento=3))
+    session.commit()
+    create_plan(session, "Teste desconto", "cartao", "Teste cartao", 10000, 3, 1, base, 10)
     session.commit()
     resumo = schedule_summaries(session)["plans"][0]
-    # Parcela 1 é do mês atual (aberta, fora do desconto); parcelas 2 e 3 são futuras.
-    futuras = [(due_in_month(add_months(base, k), 10), 10000) for k in (1, 2)]
-    assert resumo["desconto"] == desconto_antecipacao(futuras, date.today(), 10.58)
+    janeiro = [(due_in_month(add_months(base, 2), 10), 10000)]
+    assert resumo["desconto"] == desconto_antecipacao(janeiro, date.today(), 10.58)
     assert resumo["desconto"] > 0
 
 

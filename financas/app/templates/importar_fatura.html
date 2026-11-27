@@ -18,13 +18,14 @@
   <div class="panel">
     <form class="grid" style="--cols: 4" method="post" action="{{ base() }}/parcelados/importar/previa" enctype="multipart/form-data">
       <label class="span2">Arquivo CSV da fatura<input type="file" name="arquivo" accept=".csv,text/csv" required></label>
+      <label>Total da fatura (R$)<input name="total" placeholder="1.234,56" required></label>
       <label class="span2">Mês e ano da fatura
         <span class="duo">
           <select name="mes_num">{% for num, nome in meses %}<option value="{{ num }}"{% if num == mes_atual_num %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select>
           <select name="ano">{% for a in anos %}<option value="{{ a }}"{% if a == ano_atual %} selected{% endif %}>{{ a }}</option>{% endfor %}</select>
         </span>
       </label>
-      <p class="aviso todo">Cartão novo? Preencha os dois campos da direita. Ele é criado ao continuar.</p>
+      <p class="aviso todo">O total é o valor que vem no fim da fatura: digite você mesmo, o CSV não traz esse número. Cartão novo? Preencha os dois campos da direita. Ele é criado ao continuar.</p>
       <label>Cartão cadastrado
         <select name="cartao_id">
           <option value="">— nenhum —</option>
@@ -32,7 +33,7 @@
         </select>
       </label>
       <label>Nome do cartão novo<input name="novo_nome" placeholder="Nubank"></label>
-      <label>Dia de pagamento (cartão novo)<input name="novo_dia" type="number" min="1" max="31" placeholder="5"></label>
+      <label>Dia de vencimento (cartão novo)<input name="novo_dia" type="number" min="1" max="31" placeholder="5"></label>
       <div class="acao"><button type="submit" class="primary">Ver prévia</button></div>
     </form>
   </div>

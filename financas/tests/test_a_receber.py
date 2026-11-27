@@ -104,7 +104,7 @@ def test_saldo_a_pagar_e_a_receber_sao_separados(session):
     assert dados["saldo_receber"] == 3 * 10000
 
 
-def test_parcela_a_receber_entra_como_receita(session):
+def test_parcela_a_receber_nao_entra_como_receita(session):
     create_plan(
         session, "Loja", "a_receber", "", 10000, 3, 1, current_month(), 10,
         tipo="receber", pessoa="Ana",
@@ -113,7 +113,8 @@ def test_parcela_a_receber_entra_como_receita(session):
     generate_installments(session)
 
     resumo = monthly_summary(session, current_month())
-    assert resumo["receitas"]["pendente"] == 10000
+    # Parcela a receber de terceiro é reembolso: não entra em receitas (a despesa já é líquida)
+    assert resumo["receitas"]["pendente"] == 0
     assert resumo["despesas"]["pendente"] == 0
 
 

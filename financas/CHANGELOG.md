@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026.11.2 — 27/11/2026
+
+- Cartões: cada cartão tem vencimento e fechamento da fatura. A tela mostra se a fatura está em aberto ou fechada.
+- Cartões: você digita o **total da fatura**. O total não vem do CSV.
+- Cartões: a despesa da fatura no Início é a sua parte: total menos o que é de terceiro. O líquido fica guardado na fatura para o histórico.
+- Terceiros da fatura: cada pessoa que vai devolver vira um **reembolso (a receber)** no vencimento da fatura. Reembolso não conta como receita.
+- Ao marcar a fatura como paga (em Cartões ou no Início), as parcelas e recorrências do cartão daquele mês são marcadas como pagas.
+- Importação da fatura: a prévia tem duas seções. **Parcelados**, como antes. **Compras à vista**, que ficam registradas na fatura para conferência, com destino "sua" ou "de outra pessoa". Compras de terceiro geram reembolso no vencimento.
+- Importação: campo obrigatório **Total da fatura**. A prévia avisa se a soma do CSV difere do total, mas não impede a gravação.
+- Importação: as compras à vista já lançadas ou ignoradas antes não voltam como novas.
+- Início: o campo Terceiros saiu do formulário e das linhas. Lançamentos antigos continuam no banco, sem aparecer nem descontar.
+- Lançamentos da fatura e reembolsos são editados e excluídos pela tela Cartões.
+- Parcelados: botão **Quitar tudo** em cada parcelamento. Marca como pagas (ou recebidas) as parcelas que faltam, sem esperar o vencimento. Útil quando você já adiantou o restante.
+- Parcelado de terceiro (a receber): cada parcela continua sendo um reembolso no mês de recebimento, e não conta como receita.
+- Cartões: edição da fatura sem excluir e importar de novo. Em cada compra à vista ou à mão você muda o nome, quem paga (sua ou de terceiro) e as categorias, ou remove a compra da fatura. O Início é recalculado.
+- Cartões: a tela começa pelas faturas do mês. O cadastro de cartões fica em **Gerenciar cartões**, recolhido.
+- Reembolsos aparecem como "Sergio · Fatura Nubank · nov/2026". O link na lista do Início ficou curto.
+- Parcelados: botão **Quitar**. Recorrentes: categorias e valor variável cabem na mesma linha.
+- Correção: o desconto por antecipação não considera mais a parcela que já está na fatura aberta do cartão. Usa a data de fechamento da fatura.
+- Cartões: a tela mostra só a sua parte no Início. Total, valor à mão e quem pagou ficam em **Editar fatura**, que grava tudo junto.
+- Cartões: o parágrafo de reembolsos saiu da tela. Os reembolsos estão no Início.
+- Início: reembolsos têm um grupo próprio, em laranja, entre Receitas e Despesas, com o total "A receber (terceiros)" no resumo. Não somam em Receitas.
+- Reembolso aparece em laranja, com a etiqueta "a receber", no Início e em Cartões. Não conta como receita, nem no saldo nem no gráfico por categoria.
+- Cartões: a coluna de terceiro mostra só o nome de quem paga. A coluna Destino saiu: nome preenchido = de terceiro; em branco = sua.
+- Correção: renomear uma pessoa atualiza as compras da fatura e os reembolsos. Antes, a próxima gravação recriava o reembolso com o nome antigo.
+- Correção: remover uma compra à vista da fatura registra o histórico. Importar o mesmo CSV de novo não a traz de volta como nova.
+- Documentação: nova seção **Como evitar duplicados**, com a regra de cada campo.
+- Cartões: compras parceladas também se editam em **Editar fatura**. Nome, categorias e de quem é (terceiro) mudam no plano e nas parcelas pendentes, em Parcelados. Parcelado de terceiro não volta a ser seu por essa tela.
+- Cartões: rótulos de tipo **importada**, **parcelada** e **manual**. A coluna Valor fica por último nas duas seções.
+- Laranja para "de terceiros" em todas as telas, inclusive Parcelados, para manter o padrão do app.
+- Parcelados: desconto por antecipação só para compras no cartão. Boleto, carnê e demais não mostram desconto.
+- Atenção: esta versão cria a coluna `account.dia_fechamento`, a tabela `fatura_cartao`, a tabela `fatura_item` e as colunas `transacao.reembolso`, `transacao.fatura_id` e `fatura_cartao.liquido_cents`. A migração é automática.
+- Atenção: a migração converte dados antigos. Parcelas a receber e a receita "pago por terceiro" de faturas antigas viram reembolso e saem das receitas do mês. Por isso o saldo de meses com terceiros antigos pode mudar, e passa a ficar certo.
+
 ## 2026.11.1 — 23/11/2026
 
 - Parcelados: cada compra a pagar mostra o desconto estimado para quitar de uma vez as parcelas futuras. A parcela do mês atual não entra, porque já está em aberto.

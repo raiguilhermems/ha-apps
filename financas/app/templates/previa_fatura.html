@@ -14,26 +14,36 @@
   <h1>Prévia da importação</h1>
   <datalist id="pessoas">{% for n in pessoas or [] %}<option value="{{ n }}">{% endfor %}</datalist>
   <p class="muted">Cartão: <strong>{{ cartao }}</strong> · Vencimento: <strong>{{ vencimento.strftime('%d/%m/%Y') }}</strong></p>
-  <p class="aviso">Marque as compras que quer cadastrar. Compras já cadastradas e compras ignoradas antes vêm desmarcadas. Marque uma delas se quiser cadastrar agora.</p>
-  <p class="aviso">Se a compra foi feita para outra pessoa, que vai devolver o valor, marque "de outra pessoa" e informe quem paga. Ela não vira parcelado: entra em Parcelados, na seção A receber.</p>
+
+  <div class="panel">
+    <p>Total da fatura (digitado): <strong>{{ total_cents | brl }}</strong> · soma das linhas do CSV: <strong>{{ soma_csv | brl }}</strong></p>
+    {% if diferenca %}
+      <p class="aviso">A soma do CSV difere do total digitado em {{ diferenca | abs | brl }}. É só um aviso: vale o total que você digitou. A diferença costuma ser um pagamento, um estorno ou uma compra fora do arquivo.</p>
+    {% endif %}
+    <p class="muted">Marque o que quer gravar. Linhas já lançadas ou ignorada antes vêm desmarcadas. Compras de terceiro são descontadas da sua despesa da fatura e geram reembolso.</p>
+  </div>
 
   <form method="post" action="{{ base() }}/parcelados/importar/confirmar">
     <input type="hidden" name="cartao" value="{{ cartao }}">
     <input type="hidden" name="vencimento" value="{{ vencimento.isoformat() }}">
+    <input type="hidden" name="total_fatura" value="{{ total_cents }}">
     {% if dia_novo %}<input type="hidden" name="dia_novo" value="{{ dia_novo }}">{% endif %}
 
+    <h2>Parcelados</h2>
     <div class="panel">
       <table>
         <thead>
           <tr><th>Incluir</th><th class="desc">Compra</th><th class="desc">Nome exibido</th><th>Parcela</th><th>Valor</th><th class="desc">Categorias</th><th>Situação</th><th class="desc">De outra pessoa</th></tr>
         </thead>
         <tbody>
-        {% for r in previa %}
-        {% set i = loop.index0 %}
+        {% set parcelados = previa | selectattr('linha.parcelado') | list %}
+        {% for r in parcelados %}
+        {% set i = r.i %}
         <tr>
           <td>
             <input type="checkbox" name="incluir_{{ i }}" {% if r.incluir %}checked{% endif %}>
             <input type="hidden" name="indices" value="{{ i }}">
+            <input type="hidden" name="tipo_{{ i }}" value="parcelado">
             <input type="hidden" name="data_{{ i }}" value="{{ r.linha.data.isoformat() }}">
             <input type="hidden" name="original_{{ i }}" value="{{ r.linha.nome_original }}">
             <input type="hidden" name="total_{{ i }}" value="{{ r.linha.total }}">
@@ -63,6 +73,53 @@
             </div>
           </td>
         </tr>
+        {% else %}
+        <tr><td colspan="8" class="muted">Nenhum parcelado neste arquivo.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Compras à vista (vencimento)</h2>
+    <div class="panel">
+      <table>
+        <thead>
+          <tr><th>Incluir</th><th class="desc">Compra</th><th class="desc">Nome exibido</th><th>Valor</th><th class="desc">Categorias (só registro)</th><th>Situação</th><th class="desc">De outra pessoa</th></tr>
+        </thead>
+        <tbody>
+        {% set avulsas = previa | rejectattr('linha.parcelado') | list %}
+        {% for r in avulsas %}
+        {% set i = r.i %}
+        <tr>
+          <td>
+            <input type="checkbox" name="incluir_{{ i }}" {% if r.incluir %}checked{% endif %}>
+            <input type="hidden" name="indices" value="{{ i }}">
+            <input type="hidden" name="tipo_{{ i }}" value="vencimento">
+            <input type="hidden" name="data_{{ i }}" value="{{ r.linha.data.isoformat() }}">
+            <input type="hidden" name="original_{{ i }}" value="{{ r.linha.nome_original }}">
+            <input type="hidden" name="valor_{{ i }}" value="{{ r.linha.valor_cents }}">
+            <input type="hidden" name="status_{{ i }}" value="{{ r.status }}">
+            <input type="hidden" name="plano_{{ i }}" value="">
+          </td>
+          <td class="desc muted">{{ r.linha.data.strftime('%d/%m') }} · {{ r.linha.nome_original }}</td>
+          <td class="desc"><input name="nome_{{ i }}" value="{{ r.nome }}"></td>
+          <td>{{ r.linha.valor_cents | brl }}</td>
+          <td class="desc"><input name="categorias_{{ i }}" placeholder="mercado, lazer"></td>
+          <td class="status">
+            {% if r.status == 'nova' %}<span class="pill ok">nova</span>
+            {% elif r.status == 'registrada' %}<span class="pill">já lançada</span>
+            {% else %}<span class="pill bad">ignorada antes</span>{% endif %}
+          </td>
+          <td class="desc">
+            <label class="check"><input type="checkbox" name="terceiro_{{ i }}" {% if r.terceiro %}checked{% endif %}> de outra pessoa</label>
+            <div id="pessoa-{{ i }}" class="campo-pessoa">
+              <input name="pessoa_{{ i }}" value="{{ r.pessoa }}" placeholder="Quem paga" list="pessoas">
+              <small class="muted">Gera um reembolso no vencimento da fatura.</small>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="muted">Nenhuma compra à vista neste arquivo.</td></tr>
         {% endfor %}
         </tbody>
       </table>

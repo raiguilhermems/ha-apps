@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Editar fatura · FinHome</title>
+  {% include "_style.html" %}
+</head>
+<body>
+{% include "_nav.html" %}
+{% import "_macros.html" as m %}
+<div class="wrap">
+  {{ m.voltar(base() ~ '/cartoes?mes=' ~ ref) }}
+  <h1>Editar compras da fatura</h1>
+  <datalist id="pessoas">{% for n in pessoas %}<option value="{{ n }}">{% endfor %}</datalist>
+  <p class="muted">{{ cartao.name }} · {{ ref | mes }} · total {{ fatura.total_cents | brl }}</p>
+
+  {% if erro %}{{ m.erro(erro) }}{% endif %}
+  {% if paga %}
+    <p class="aviso">A fatura está paga. Para mudar as compras, desfaça o pagamento em Cartões.</p>
+  {% endif %}
+
+  <form method="post" action="{{ base() }}/cartoes/{{ cartao.id }}/fatura/editar">
+    <input type="hidden" name="mes" value="{{ ref }}">
+    <div class="panel">
+      <h3>Valores da fatura</h3>
+      <div class="grid" style="--cols: 3">
+        <label>Total da fatura (R$)<input name="total" value="{{ ('%.2f'|format(fatura.total_cents / 100)) | replace('.', ',') }}" placeholder="1.234,56" required {% if paga %}disabled{% endif %}></label>
+        <label>Pago por terceiro, à mão (R$)<input name="terceiro" value="{{ ('%.2f'|format(fatura.terceiro_cents / 100)) | replace('.', ',') if fatura.terceiro_cents else '' }}" placeholder="0,00" {% if paga %}disabled{% endif %}></label>
+        <label>Quem pagou (à mão)<input name="pessoa" value="{{ (fatura.pessoa | pessoa) if fatura.pessoa else '' }}" placeholder="Ana" {% if paga %}disabled{% endif %}></label>
+      </div>
+      <p class="muted">O valor à mão é somado às compras importadas, abaixo.</p>
+    </div>
+
+    <div class="panel">
+      <table>
+        <thead>
+          <tr><th class="desc">Compra</th><th>Tipo</th><th class="desc">Terceiro</th><th class="desc">Categorias</th><th>Valor</th><th>Remover</th></tr>
+        </thead>
+        <tbody>
+        {% for it in itens %}
+          {% set dis = 'disabled' if paga else '' %}
+          <tr>
+            <td class="desc"><input type="hidden" name="ids" value="{{ it.id }}"><input name="descricao_{{ it.id }}" value="{{ it.descricao }}" required {{ dis }}></td>
+            <td>{{ 'parcelada' if it.kind == 'parcelado' else ('importada' if it.kind == 'vencimento' else 'manual') }}</td>
+            <td class="desc"><input name="pessoa_{{ it.id }}" value="{{ (it.pessoa | pessoa) if it.pessoa else '' }}" list="pessoas" placeholder="Nome do terceiro" {{ dis }}></td>
+            <td class="desc"><input name="categorias_{{ it.id }}" value="{{ it.categorias }}" placeholder="mercado, lazer" {{ dis }}></td>
+            <td>{{ it.valor_cents | brl }}</td>
+            <td>{% if it.kind != 'parcelado' %}<label class="check"><input type="checkbox" name="remover_{{ it.id }}" {{ dis }}> remover</label>{% endif %}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" class="muted">Esta fatura não tem compras registradas. Você pode preencher o total acima e gravar.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="muted">Em Terceiro, escreva o nome de quem vai devolver; deixe em branco se a compra for sua. Aqui você também muda o nome, as categorias ou remove a compra, e ajusta o total e o valor pago por terceiro. O valor de cada compra vem do CSV e não muda aqui. Compras parceladas mudam também no plano, em Parcelados. Ao gravar, o Início é recalculado.</p>
+
+    <div class="barra-final">
+      <a class="btn" href="{{ base() }}/cartoes?mes={{ ref }}">Cancelar</a>
+      <button type="submit" class="primary" {% if paga %}disabled{% endif %}>Gravar alterações</button>
+    </div>
+  </form>
+</div>
+</body>
+</html>

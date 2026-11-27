@@ -21,14 +21,14 @@ def test_dia_31_em_fevereiro_usa_ultimo_dia_e_pula_fim_de_semana():
 
 
 def test_nome_repetido_ignora_caixa_e_acento(session):
-    criar(session, "Itaú", 5)
+    criar(session, "Itaú", 5, 25)
     session.commit()
     with pytest.raises(ValueError):
-        criar(session, "ITAU", 10)
+        criar(session, "ITAU", 10, 25)
 
 
 def test_cartao_com_parcelamento_nao_pode_ser_excluido(session):
-    cartao = criar(session, "Nubank", 5)
+    cartao = criar(session, "Nubank", 5, 25)
     session.commit()
     create_plan(session, "TV", "cartao", "Nubank", 10000, 3, 1, "2026-11", 5, "")
     session.commit()
@@ -37,7 +37,7 @@ def test_cartao_com_parcelamento_nao_pode_ser_excluido(session):
 
 
 def test_cartao_sem_vinculos_pode_ser_excluido(session):
-    cartao = criar(session, "Teste", 5)
+    cartao = criar(session, "Teste", 5, 25)
     session.commit()
     excluir(session, cartao)
     session.commit()
@@ -45,6 +45,6 @@ def test_cartao_sem_vinculos_pode_ser_excluido(session):
 
 
 def test_validar_novo_nao_grava_cartao(session):
-    nome = validar_novo(session, "  Itaú  ", 5)
+    nome = validar_novo(session, "  Itaú  ", 5, 25)
     assert nome == "Itaú"
     assert listar(session) == []

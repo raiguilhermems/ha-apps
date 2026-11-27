@@ -2,7 +2,7 @@
 
 Regras:
 - Lançamentos entram pela data de vencimento.
-- Despesa com terceiros entra pelo valor menos a parte de terceiros.
+- Despesa entra pelo valor total. O campo Terceiros saiu do Início; valores antigos ficam só no banco.
 - Lançamentos com tag que não soma ao total ficam de fora.
 - Lançamentos ligados a uma conta do tipo cartão ficam de fora do total.
 """
@@ -32,9 +32,7 @@ def excluded_transaction_ids(session: Session) -> set[int]:
 
 
 def net_amount(t: Transaction) -> int:
-    """Valor que conta para o mês: despesa menos a parte de terceiros."""
-    if t.kind == "despesa":
-        return t.amount_cents - (t.third_party_cents or 0)
+    """Valor que conta para o mês. Terceiros antigos (third_party_cents) não são descontados."""
     return t.amount_cents
 
 
@@ -56,6 +54,9 @@ def monthly_summary(session: Session, ref: str) -> dict:
     ).all()
     for t in txs:
         if t.account_id in cards or t.id in excluded or t.kind not in ("receita", "despesa"):
+            continue
+        if t.reembolso:
+            # A receber de terceiro: a despesa da fatura já está líquida, então não é receita
             continue
         bucket = "receitas" if t.kind == "receita" else "despesas"
         value = net_amount(t)

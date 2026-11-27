@@ -17,6 +17,7 @@
 
   <section class="cards">
     <div class="card"><small>Receitas</small><div class="val">{{ s.receitas_total | brl }}</div></div>
+    <div class="card"><small>A receber (terceiros)</small><div class="val reembolso">{{ reembolsos_total | brl }}</div></div>
     <div class="card"><small>Despesas</small><div class="val">{{ s.despesas_total | brl }}</div></div>
     <div class="card"><small>Saldo</small><div class="val {{ 'ok' if s.saldo >= 0 else 'bad' }}">{{ s.saldo | brl }}</div></div>
     <div class="card"><small>Já pago</small><div class="val ok">{{ s.pago | brl }}</div></div>
@@ -42,7 +43,7 @@
 
   <h2>Novo lançamento</h2>
   <div class="panel">
-    <form class="grid" style="--cols: 6" method="post" action="{{ base() }}/lancamentos">
+    <form class="grid" style="--cols: 5" method="post" action="{{ base() }}/lancamentos">
       <label class="span2">Descrição<input name="description" required></label>
       <label>Valor (R$)<input name="amount" placeholder="1.234,56" required></label>
       <label>Vencimento<input type="date" name="due_date" value="{{ today }}" required></label>
@@ -52,7 +53,6 @@
           <option value="receita">Receita</option>
         </select>
       </label>
-      <label>Terceiros (R$, só despesa)<input name="third_party" placeholder="0,00"></label>
       <label class="span5">Categorias (separadas por vírgula)<input name="tags" placeholder="mercado, lazer"></label>
       <button type="submit" class="primary">Adicionar</button>
     </form>
@@ -64,18 +64,19 @@
       <thead><tr><th>Vencimento</th><th class="desc">Descrição</th><th>Categorias</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
       <tbody>
       {% for t in txs %}
-      {% if loop.changed(t.kind) and t.kind in ['receita', 'despesa'] %}
-      <tr class="grupo">
-        <td colspan="6">{{ 'Receitas' if t.kind == 'receita' else 'Despesas' }} · {{ (s.receitas_total if t.kind == 'receita' else s.despesas_total) | brl }}</td>
+      {% set grupo = 'reembolso' if t.reembolso else t.kind %}
+      {% if loop.changed(grupo) and grupo in ['receita', 'reembolso', 'despesa'] %}
+      <tr class="grupo{{ ' grupo-reembolso' if grupo == 'reembolso' }}">
+        <td colspan="6">{% if grupo == 'receita' %}Receitas · {{ s.receitas_total | brl }}{% elif grupo == 'reembolso' %}A receber de terceiros · {{ reembolsos_total | brl }}{% else %}Despesas · {{ s.despesas_total | brl }}{% endif %}</td>
       </tr>
       {% endif %}
       {% set atrasada = t.kind == 'despesa' and t.status == 'pendente' and t.due_date < today %}
-      <tr{% if t.kind in ['receita', 'despesa'] %} class="linha-{{ t.kind }}"{% endif %}>
+      <tr{% if grupo in ['receita', 'reembolso', 'despesa'] %} class="linha-{{ grupo }}"{% endif %}>
         <td>{{ t.due_date.strftime('%d/%m') }}</td>
         <td class="desc">
           {{ t.description }}
           {% if t.recurring_rule_id %}<span class="muted" title="Recorrente">↻</span>{% endif %}
-          {% if t.third_party_cents %}<span class="pill">terceiros {{ t.third_party_cents | brl }}</span>{% endif %}
+          {% if t.id in fatura_map %}<a class="pill {{ 'reembolso' if t.reembolso }}" href="{{ base() }}/cartoes?mes={{ ref }}" title="{{ 'Reembolso: a receber de terceiro, não conta como receita' if t.reembolso else 'Fatura do cartão' }}">{{ fatura_map[t.id] }}</a>{% endif %}
         </td>
         <td>
           {% for tg in tag_map.get(t.id, []) %}{{ m.cat_pill(tg.id, tg.name, tg.kind) }} {% endfor %}
@@ -97,11 +98,13 @@
               {% set rot = 'Desfazer' if t.status == 'pago' else ('Marcar recebido' if t.kind == 'receita' else 'Marcar pago') %}
               <button type="submit" class="icon" title="{{ rot }}" aria-label="{{ rot }}">{{ m.icone('desfazer' if t.status == 'pago' else 'check') }}</button>
             </form>
+            {% if t.id not in fatura_map %}
             <a class="btn icon" href="{{ base() }}/lancamentos/{{ t.id }}/editar" title="Editar" aria-label="Editar">{{ m.icone('editar') }}</a>
             <form class="inline" method="post" action="{{ base() }}/transacoes/{{ t.id }}/excluir" onsubmit="return confirm('Excluir este lançamento?')">
               <input type="hidden" name="mes" value="{{ ref }}">
               <button type="submit" class="icon danger" title="Excluir" aria-label="Excluir">{{ m.icone('excluir') }}</button>
             </form>
+            {% endif %}
           </div>
         </td>
       </tr>

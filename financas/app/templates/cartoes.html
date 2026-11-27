@@ -12,39 +12,41 @@
 <div class="wrap">
   <h1>Cartões</h1>
 
-  {% if erro %}{{ m.erro(erro) }}{% endif %}
-  {% if ok == 'criado' %}{{ m.sucesso('Cartão cadastrado.') }}{% endif %}
-  {% if ok == 'salvo' %}{{ m.sucesso('Cartão atualizado.') }}{% endif %}
-  {% if ok == 'excluido' %}{{ m.sucesso('Cartão excluído.') }}{% endif %}
+  <details class="panel" {% if erro or not cartoes %}open{% endif %}>
+    <summary><strong>Gerenciar cartões</strong> <span class="muted">cadastrar, editar datas ou excluir</span></summary>
 
-  <h2>Novo cartão</h2>
-  <div class="panel">
-    <form class="grid" style="--cols: 4" method="post" action="{{ base() }}/cartoes">
+    <h3>Novo cartão</h3>
+    <form class="grid" style="--cols: 5" method="post" action="{{ base() }}/cartoes">
       <label class="span2">Nome do cartão<input name="nome" required placeholder="Nubank"></label>
-      <label>Dia de pagamento da fatura<input name="dia" type="number" min="1" max="31" required placeholder="5"></label>
+      <label>Vencimento da fatura (dia)<input name="dia" type="number" min="1" max="31" required placeholder="5"></label>
+      <label>Fechamento da fatura (dia)<input name="fechamento" type="number" min="1" max="31" required placeholder="25"></label>
       <button type="submit" class="primary">Adicionar</button>
     </form>
-  </div>
 
-  <h2>Cadastrados</h2>
-  {% if cartoes %}
-  <div class="panel">
+    <h3>Cadastrados</h3>
+    {% if cartoes %}
     <table>
-      <thead><tr><th class="desc">Nome e dia de pagamento</th><th class="col-estreita">Ações</th></tr></thead>
+      <thead><tr><th class="desc">Nome, vencimento e fechamento</th><th class="col-estreita">Ações</th></tr></thead>
       <tbody>
       {% for c in cartoes %}
       <tr>
         <td class="desc">
           <div class="linha">
             <input class="campo-nome" form="cartao-{{ c.id }}" name="nome" value="{{ c.name }}" required aria-label="Nome do cartão">
-            <input class="campo-dia" form="cartao-{{ c.id }}" name="dia" type="number" min="1" max="31" value="{{ c.dia_pagamento or '' }}" required aria-label="Dia de pagamento">
+            <span class="muted">vence dia</span>
+            <input class="campo-dia" form="cartao-{{ c.id }}" name="dia" type="number" min="1" max="31" value="{{ c.dia_pagamento or '' }}" required aria-label="Dia de vencimento">
+            <span class="muted">fecha dia</span>
+            <input class="campo-dia" form="cartao-{{ c.id }}" name="fechamento" type="number" min="1" max="31" value="{{ c.dia_fechamento or '' }}" required aria-label="Dia de fechamento">
           </div>
+          {% if not c.dia_pagamento or not c.dia_fechamento %}
+            <p class="aviso">Cadastro incompleto: informe o vencimento e o fechamento para lançar faturas.</p>
+          {% endif %}
         </td>
         <td class="col-estreita">
           <div class="acoes">
             <button type="submit" class="icon" form="cartao-{{ c.id }}" title="Salvar" aria-label="Salvar">{{ m.icone('check') }}</button>
             {% if vinculos[c.id] %}
-              <span class="pill" title="Este cartão tem parcelamentos ou recorrências. Remova-os antes de excluir o cartão.">em uso</span>
+              <span class="pill" title="Este cartão tem parcelamentos, recorrências ou faturas. Remova-os antes de excluir o cartão.">em uso</span>
             {% else %}
               <form class="inline" method="post" action="{{ base() }}/cartoes/{{ c.id }}/excluir" data-nome="{{ c.name }}" onsubmit="return confirm('Excluir o cartão ' + this.dataset.nome + '?')">
                 <button type="submit" class="icon danger" title="Excluir" aria-label="Excluir">{{ m.icone('excluir') }}</button>
@@ -59,9 +61,117 @@
     {% for c in cartoes %}
     <form id="cartao-{{ c.id }}" method="post" action="{{ base() }}/cartoes/{{ c.id }}/atualizar"></form>
     {% endfor %}
-  </div>
+    {% else %}
+    <p class="muted">Nenhum cartão cadastrado ainda.</p>
+    {% endif %}
+  </details>
+
+  {{ m.mesnav(base() ~ '/cartoes', ref) }}
+
+  {% if erro %}{{ m.erro(erro) }}{% endif %}
+  {% if ok == 'criado' %}{{ m.sucesso('Cartão cadastrado.') }}{% endif %}
+  {% if ok == 'salvo' %}{{ m.sucesso('Cartão atualizado.') }}{% endif %}
+  {% if ok == 'excluido' %}{{ m.sucesso('Cartão excluído.') }}{% endif %}
+  {% if ok == 'fatura' %}{{ m.sucesso('Fatura lançada no Início.') }}{% endif %}
+  {% if ok == 'fatura_excluida' %}{{ m.sucesso('Fatura excluída do Início.') }}{% endif %}
+  {% if ok == 'importada' %}{{ m.sucesso('Importação gravada. Confira a fatura abaixo.') }}{% endif %}
+  {% if ok == 'item_salvo' %}{{ m.sucesso('Alterações gravadas. O Início foi recalculado.') }}{% endif %}
+
+  <h2>Faturas de {{ ref | mes }}</h2>
+  {% if resumos %}
+    {% for r in resumos %}
+    {% set c = r.cartao %}
+    {% set f = r.fatura %}
+    <div class="panel">
+      <div class="linha">
+        <strong>{{ c.name }}</strong>
+        {% if r.vence %}<span class="muted">vence {{ r.vence.strftime('%d/%m') }}{% if r.fecha %} · fecha {{ r.fecha.strftime('%d/%m') }}{% endif %}</span>{% endif %}
+        <span class="pill {{ {'paga': 'ok', 'em aberto': 'aberta', 'fechada': 'fechada'}.get(r.situacao, 'sem') }}">{{ r.situacao | capitalize }}</span>
+      </div>
+
+      {% if not r.vence %}
+        <p class="aviso">Complete o cadastro (vencimento e fechamento) em Gerenciar cartões, no topo, para lançar a fatura.</p>
+      {% else %}
+        {% if f %}
+          <p>Sua parte no Início: <strong>{{ f.liquido_cents | brl }}</strong></p>
+
+          <div class="acoes esq">
+            <form class="inline" method="post" action="{{ base() }}/transacoes/{{ r.despesa.id }}/pagar">
+              <input type="hidden" name="mes" value="{{ ref }}">
+              <input type="hidden" name="voltar" value="cartoes">
+              {% if r.despesa.status == 'pago' %}
+                <button type="submit">Desfazer pagamento</button>
+              {% else %}
+                <button type="submit" class="primary">Marcar fatura paga</button>
+              {% endif %}
+            </form>
+            {% if r.despesa.status != 'pago' %}
+            <form class="inline" method="post" action="{{ base() }}/cartoes/{{ c.id }}/fatura/excluir" onsubmit="return confirm('Excluir a fatura deste mês? As compras e os reembolsos saem do Início.')">
+              <input type="hidden" name="mes" value="{{ ref }}">
+              <button type="submit" class="danger">Excluir fatura</button>
+            </form>
+            {% endif %}
+            <a class="btn" href="{{ base() }}/cartoes/{{ c.id }}/fatura/editar?mes={{ ref }}">Editar fatura</a>
+          </div>
+
+          {% if r.despesa.status == 'pendente' %}
+            <p class="aviso">{% if r.pendentes_qtd %}Ao marcar como paga, quitam {{ r.pendentes_qtd }} parcela(s) ou recorrência(s) deste cartão no mês ({{ r.pendentes_valor | brl }}).{% else %}Nenhuma parcela ou recorrência pendente deste cartão neste mês.{% endif %}</p>
+          {% endif %}
+
+          {% if r.itens %}
+          {% set suas = r.itens | rejectattr('destino', 'equalto', 'terceiro') | list %}
+          {% set de_terceiros = r.itens | selectattr('destino', 'equalto', 'terceiro') | list %}
+          {% if suas %}
+          <h3>Minhas compras · {{ suas | sum(attribute='valor_cents') | brl }}</h3>
+          <table>
+            <thead><tr><th class="desc">Compra</th><th>Tipo</th><th class="desc">Categorias</th><th>Valor</th></tr></thead>
+            <tbody>
+            {% for it in suas %}
+              <tr>
+                <td class="desc">{{ it.descricao }}</td>
+                <td>{{ 'parcelada' if it.kind == 'parcelado' else ('importada' if it.kind == 'vencimento' else 'manual') }}</td>
+                <td class="desc muted">{{ it.categorias or '—' }}</td>
+                <td>{{ it.valor_cents | brl }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
+          {% if de_terceiros %}
+          <h3>De terceiros · {{ de_terceiros | sum(attribute='valor_cents') | brl }}</h3>
+          <table>
+            <thead><tr><th class="desc">Compra</th><th>Tipo</th><th class="desc">Terceiro</th><th>Valor</th></tr></thead>
+            <tbody>
+            {% for it in de_terceiros %}
+              <tr>
+                <td class="desc">{{ it.descricao }}</td>
+                <td>{{ 'parcelada' if it.kind == 'parcelado' else ('importada' if it.kind == 'vencimento' else 'manual') }}</td>
+                <td class="desc">{{ it.pessoa | pessoa }}</td>
+                <td>{{ it.valor_cents | brl }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
+          {% endif %}
+        {% else %}
+          <p class="aviso">Fatura ainda não lançada.</p>
+        {% endif %}
+
+        {% if not f %}
+        <form class="grid" style="--cols: 4" method="post" action="{{ base() }}/cartoes/{{ c.id }}/fatura">
+          <input type="hidden" name="mes" value="{{ ref }}">
+          <label>Total da fatura (R$)<input name="total" value="{{ ('%.2f'|format(f.total_cents / 100)) | replace('.', ',') if f else '' }}" placeholder="1.234,56" required></label>
+          <label>Pago por terceiro, à mão (R$)<input name="terceiro" value="{{ ('%.2f'|format(f.terceiro_cents / 100)) | replace('.', ',') if f and f.terceiro_cents else '' }}" placeholder="0,00"></label>
+          <label>Quem pagou por terceiro<input name="pessoa" value="{{ f.pessoa | pessoa if f and f.pessoa else '' }}" placeholder="Ana"></label>
+          <button type="submit" class="primary">{{ 'Salvar fatura' if f else 'Lançar fatura' }}</button>
+        </form>
+        {% endif %}
+      {% endif %}
+    </div>
+    {% endfor %}
   {% else %}
-  <p class="muted">Nenhum cartão cadastrado ainda.</p>
+    <p class="muted">Nenhum cartão cadastrado ainda. Abra Gerenciar cartões, no topo, para cadastrar.</p>
   {% endif %}
 </div>
 </body>
